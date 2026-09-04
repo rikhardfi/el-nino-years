@@ -1,9 +1,9 @@
 # Publishes the offline app (app/) to GitHub Pages on every push to main.
 # Repo settings → Pages → Source: "GitHub Actions".
 name: Deploy app to GitHub Pages
+# Manual trigger only while the repo is private (Pages needs a public repo on the free plan).
+# When going public: restore `push: {branches: [main]}` under `on:`.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
