@@ -1,0 +1,198 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\setmainfont{Helvetica Neue}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{graphicx,booktabs,xcolor,colortbl,array,longtable,caption,float,amsmath,textcomp}
+\usepackage[hidelinks]{hyperref}
+\usepackage[style=numeric,sorting=none,backend=biber,maxbibnames=6]{biblatex}
+\addbibresource{references.bib}
+\usepackage{setspace}
+\captionsetup{font=small,labelfont=bf,justification=raggedright,singlelinecheck=false}
+\graphicspath{{figures/}}
+\input{generated/numbers.tex}
+\newcommand{\degC}{\textdegree{}C}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\definecolor{super}{HTML}{B3262C}
+\definecolor{elnino}{HTML}{EB6834}
+\definecolor{lanina}{HTML}{2A78D6}
+
+\title{\textbf{Super El Niño winters in Finland and the Nordic countries}\\[4pt]
+\large Temperature, precipitation, snow and frost in super El Niño winters compared with ordinary El Niño, neutral and La Niña winters, 1950 to \lastWinter}
+\author{Analysis report}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent\textbf{Question.} Are Nordic winters warmer and wetter in super El Niño years (event peak Oceanic Niño Index, ONI, at or above 2.0\,\degC) than in ordinary El Niño years?
+\textbf{Data.} Daily observations from \nStationsFI{} Finnish Meteorological Institute stations (Helsinki Kaisaniemi from 1900, most from 1959) and \nStationsGHCN{} GHCN-Daily stations in Sweden, Norway, Denmark and Iceland, with ERA5 reanalysis (Open-Meteo) as a partial cross-check. Winters were classified from the NOAA ONI: \nSuper{} super El Niño winters (\superWinters), \nElnino{} other El Niño winters, \nNeutral{} neutral and \nLanina{} La Niña winters.
+\textbf{Method.} Seasonal (DJF, JFM) means and counts per station and winter; anomalies against 1991 to 2020; a linear trend removed per station, season and metric so that the late-record clustering of super events does not masquerade as an ENSO signal; group means with bootstrap confidence intervals and permutation tests.
+\textbf{Result.} \input{generated/abstract_result.tex}
+\textbf{Caveat.} With three super El Niño winters, every interval is wide and no single-winter anecdote should be read as a rule. The interactive companion app lets the reader change the threshold, season, metric and region.
+\end{abstract}
+
+\section{Background and hypothesis}
+
+El Niño alters the winter circulation over the North Atlantic and Europe, but the teleconnection is weak, seasonally shifting and not linear in event strength. Reviews of the European response find the most robust signal in late winter, when a warm tropical Pacific favours a weakened stratospheric polar vortex and a negative phase of the North Atlantic Oscillation, which in northern Europe means colder and drier rather than milder conditions \cite{bronnimann2007,ineson2009,bell2009,domeisen2019}. Early winter can show the opposite sign \cite{bronnimann2007}. Model and reanalysis work on the strongest events suggests that the response saturates or even changes character for very strong El Niños, with a direct tropospheric route that projects less on the NAO \cite{toniazzo2006,hardiman2019}. Seasonal forecast systems nevertheless draw real skill for European winters from the tropical Pacific \cite{scaife2014}.
+
+The working hypothesis for this report was the everyday one: that super El Niño winters in Finland are milder and wetter than ordinary El Niño winters. The literature above gives a reason to expect the opposite in late winter, so the analysis was set up to let the data decide, with both DJF and JFM windows and with the same methods applied to all four ENSO groups.
+
+\section{Data}
+
+\subsection{ENSO classification}
+The Oceanic Niño Index (three-month running mean of ERSSTv5 Niño 3.4 sea surface temperature anomalies) was downloaded from the NOAA Climate Prediction Center \cite{noaa_oni,huang2017}. Following the CPC definition, an event is at least five consecutive overlapping seasons with ONI at or above +0.5\,\degC{} (El Niño) or at or below $-$0.5\,\degC{} (La Niña). Each winter is labelled by the year of its January (winter 1997/98 is 1998) and takes the ONI of its DJF season. A winter inside an El Niño event whose peak ONI reaches 2.0\,\degC{} is a \emph{super El Niño winter} only if it is the winter containing the peak; the second winter of a two-year event (2014/15) is classified on its own DJF value. Winters inside an event that never reaches 2.0 are \emph{El Niño}; winters inside a La Niña event are \emph{La Niña}; all others are \emph{neutral}. Winters before 1950/51 carry no ONI label and were used only to estimate station trends and climatologies. The 2023/24 event peaked at 1.99\,\degC{} in the current ONI table and is therefore an ordinary El Niño winter at the 2.0 threshold; the companion app allows the threshold to be moved. At the time of writing (September 2026) a new El Niño is under way: the ONI reached 1.8\,\degC{} in June to August 2026 and NOAA gives a better than 90\,\% chance of a very strong event in the coming autumn and winter, so winter 2026/27 is the obvious first test of anything claimed here.
+
+\subsection{Station observations}
+Finnish daily observations (daily mean, maximum and minimum temperature, precipitation and snow depth) were fetched from the FMI open data WFS interface \cite{fmi_opendata}, one calendar year per request, for \nStationsFI{} stations chosen for record length and geographic spread (Table~\ref{tab:sites}). The open interface serves most stations from 1959; Helsinki Kaisaniemi and Sodankylä Tähtelä extend to the early 1900s. At several airport stations precipitation and snow depth end around 2008 when observations moved to automatic systems; temperature continues. For Sweden, Norway, Denmark and Iceland daily data came from the NOAA Global Historical Climatology Network-Daily archive \cite{menne2012}, which holds the national services' long series (Stockholm and Härnösand from the 1850s). Daily mean temperature was taken as reported (TAVG) or as the mean of TMAX and TMIN where TAVG is absent. Values with a quality flag were discarded. Denmark is thinly covered in GHCN-Daily after 2000; four stations were combined. Muonio Alamuonio (GHCN-Daily, 1959 to 2026, snow depth from 1982) was added as a single station because it is the nearest long record to Olos; it is shown at station level and in the app but is not part of the Finnish national series, which uses FMI stations only.
+
+\subsection{ERA5 reanalysis}
+The original plan used ERA5 through the Open-Meteo archive API for all non-Finnish points \cite{openmeteo,hersbach2020}. Open-Meteo counts one call per two weeks of data per location, so an 86-year daily series costs about 2\,260 calls against a free quota of 10\,000 per day. ERA5 series were therefore fetched only for a few points as a cross-check, and the reported Nordic results rest on station observations.
+
+\subsection{Seasonal metrics}
+For each station, winter and window (DJF: December to February; JFM: January to March; NDJFM as a five-month window in the app) the following were computed when at least 90\,\% of the days were present: mean temperature; mean daily maximum and minimum; precipitation sum; wet days ($\geq$1\,mm); mean and maximum snow depth; snow-cover days ($\geq$1\,cm); frost days (Tmin $<$ 0\,\degC); ice days (Tmax $<$ 0\,\degC); thaw days (Tmax $>$ 0\,\degC); and rain-on-snow days (liquid precipitation $\geq$1\,mm on a day with snow cover, using rain where reported and otherwise precipitation on days with mean temperature above 0.5\,\degC). Counts were scaled to the full window length when a few days were missing.
+
+\section{Methods}
+
+Three versions of every metric are analysed: the raw value; the anomaly relative to the 1991 to 2020 mean of the same station, window and metric; and a \emph{detrended anomaly}, the residual from an ordinary least squares line fitted through all available winters of that station, window and metric. The detrended version is the primary one. The three super El Niño winters fall in 1983, 1998 and 2016, late in a record with a warming trend of roughly 0.2 to 0.5\,\degC{} per decade in Nordic winters, so raw composites would credit El Niño with warming that belongs to the trend. National series are the mean of station anomalies per winter (FMI for Finland, GHCN-Daily elsewhere; at least two stations required), and a Nordic series is the mean of the five national series.
+
+For each unit (station or country), window, metric and version, group means with 95\,\% confidence intervals are reported: a percentile bootstrap (4\,000 resamples) for groups of six or more winters and a $t$-interval for smaller groups, because a bootstrap of three values has only ten distinct resamples and understates the uncertainty. Pairwise differences of means (super minus El Niño, super minus neutral, El Niño minus neutral, La Niña minus neutral) carry bootstrap intervals, or Welch $t$-intervals when either group is small, together with a two-sided permutation test of the difference in means (5\,000 permutations), Welch's $t$ and Mann-Whitney $U$ as sensitivity checks, and Cohen's $d$. Spearman's rank correlation between the DJF ONI and the metric across all labelled winters is given as a continuous alternative to the four groups. The permutation test is the primary test: with three super winters it asks how often three winters drawn at random from the record differ from the rest by as much as the observed three, and it does not depend on the spread within the super group, which the $t$-based intervals do. No correction for multiple comparisons was applied; the number of tests is large and the reader should treat isolated significant cells as expected noise.
+
+All code is in \texttt{src/} (Python 3.13: pandas, NumPy, SciPy, Matplotlib). The pipeline runs end to end with \texttt{python3.13 src/run\_all.py}; the offline app is \texttt{app/index.html}.
+
+\section{Results}
+\input{generated/results_text.tex}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig01_oni_timeline}
+\caption{Oceanic Niño Index 1950 to present. Warm (orange) and cold (blue) shading marks values beyond $\pm$0.5\,\degC. The three winters whose events peaked at or above 2.0\,\degC{} are labelled.}
+\label{fig:oni}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig02_composite_tmean_djf}
+\caption{DJF mean temperature, detrended anomaly, by ENSO group and region. Dots are group means, bars 95\,\% confidence intervals (percentile bootstrap; $t$-interval for the three super winters), small points individual winters.}
+\label{fig:tmean}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig06_composite_tmean_jfm}
+\caption{As Figure~\ref{fig:tmean} for January to March.}
+\label{fig:tmeanjfm}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig03_composite_precip_djf}
+\caption{DJF precipitation sum, detrended anomaly, by ENSO group and region.}
+\label{fig:precip}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig04_composite_snow_djf}
+\caption{DJF mean snow depth, detrended anomaly, by ENSO group and region. Snow depth is complete for Finland (FMI) and for most Norwegian and Swedish GHCN stations; Denmark and Iceland have few snow-depth observations and their panels are sparse or empty.}
+\label{fig:snow}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig05_composite_thaw_djf}
+\caption{DJF thaw days (days with maximum temperature above 0\,\degC), detrended anomaly, by ENSO group and region.}
+\label{fig:thaw}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig07_timeseries_fi_tmean_djf}
+\caption{Finland, national mean of FMI stations: DJF mean-temperature detrended anomaly per winter, coloured by ENSO group.}
+\label{fig:tsfi}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig08_timeseries_nordic_tmean_djf}
+\caption{Nordic mean (five national series): DJF mean-temperature detrended anomaly per winter.}
+\label{fig:tsnordic}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig09_oni_scatter_tmean_djf}
+\caption{DJF mean-temperature detrended anomaly against the DJF ONI, all labelled winters, with an ordinary least squares line and Spearman's $\rho$.}
+\label{fig:scatter}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{fig10_map_tmean_super_neutral}
+\caption{Station-level difference in DJF mean temperature (detrended anomaly), super El Niño minus neutral winters. Black outline: permutation $p < 0.05$.}
+\label{fig:map}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{fig11_map_precip_super_neutral}
+\caption{As Figure~\ref{fig:map} for DJF precipitation sum.}
+\label{fig:mapprecip}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig12_heatmap_super_neutral_djf}
+\caption{Effect size (Cohen's $d$) of super El Niño minus neutral winters, DJF detrended anomalies, by station and metric. Asterisks mark permutation $p < 0.05$; with $n = 3$ these are uncorrected and expected to occur by chance in a table of this size.}
+\label{fig:heat}
+\end{figure}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{fig13_heatmap_elnino_neutral_djf}
+\caption{As Figure~\ref{fig:heat} for ordinary El Niño minus neutral winters.}
+\label{fig:heat2}
+\end{figure}
+
+\begin{table}[H]
+\caption{DJF detrended anomalies: group means with 95\,\% confidence intervals (percentile bootstrap; $t$-interval when $n<6$), national series. Units: temperature \degC, precipitation mm, snow depth cm, days.}
+\label{tab:comp}
+\scriptsize
+\input{generated/table_composites_djf.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{DJF detrended anomalies: differences of group means with 95\,\% confidence intervals (bootstrap; Welch $t$-interval when a group has $n<6$) and permutation $p$ ($^{*}$: $p<0.05$, uncorrected).}
+\label{tab:contr}
+\scriptsize
+\input{generated/table_contrasts_djf.tex}
+\end{table}
+
+\begin{table}[H]
+\caption{As Table~\ref{tab:contr} for January to March.}
+\label{tab:contrjfm}
+\scriptsize
+\input{generated/table_contrasts_jfm.tex}
+\end{table}
+
+\section{Discussion}
+\input{generated/discussion_text.tex}
+
+\section{Limitations}
+\begin{itemize}
+\item Three super El Niño winters. Every statement about them is a statement about three winters, each also shaped by the NAO, the stratospheric vortex, sea ice and internal variability of that particular year. The confidence intervals show this honestly; the point estimates should not be quoted without them.
+\item Threshold sensitivity. Moving the super threshold from 2.0 to 1.8 adds 2023/24 and 1972/73; at 1.5 the group becomes six to eight winters. The app exposes this; the report fixes 2.0 as pre-specified.
+\item Detrending assumes a linear trend over each station's record. It removes part of any genuine low-frequency ENSO signal along with the warming, and it cannot remove the effect of the Atlantic Multidecadal Variability or of the 1989 to 1995 positive-NAO cluster.
+\item Station changes. FMI airport stations lost manual precipitation and snow observations around 2008; GHCN-Daily series contain relocations and instrument changes that national homogenised series correct and this analysis does not. The seasonal, anomaly-based design reduces but does not eliminate the effect.
+\item The originally planned ERA5 coverage was reduced by API quota. Where ERA5 cross-check points exist, they are shown in the app as separate units and were not mixed with station data.
+\item No multiple-comparison correction; roughly 60 units, 12 metrics, 3 windows, 3 versions and 5 contrasts were tested. Isolated asterisks are expected.
+\end{itemize}
+
+\section{Reproducibility}
+\begin{itemize}
+\item \texttt{src/enso.py}: download ONI, define events, label winters.
+\item \texttt{src/fetch\_fmi.py}, \texttt{src/fetch\_ghcn.py}, \texttt{src/fetch\_openmeteo.py}: cached raw data.
+\item \texttt{src/metrics.py}, \texttt{src/analysis.py}: seasonal metrics, anomalies, composites, tests.
+\item \texttt{src/figures.py}: figures (PDF and PNG) and the generated tables and macros used in this document.
+\item \texttt{src/build\_app\_data.py}: data bundle for \texttt{app/index.html}.
+\end{itemize}
+
+\begin{table}[H]
+\caption{Stations used in the national series.}
+\label{tab:sites}
+\scriptsize
+\input{generated/table_sites.tex}
+\end{table}
+
+\printbibliography
+\end{document}

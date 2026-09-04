@@ -1,0 +1,16 @@
+data/raw/
+data/processed/daily/
+report/*.aux
+report/*.bbl
+report/*.bcf
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.run.xml
+report/*.toc
+report/build.log
+__pycache__/
+.DS_Store
+blog/
