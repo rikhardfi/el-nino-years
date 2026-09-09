@@ -40,14 +40,14 @@ Mann-Whitney U, Cohen's d; Spearman ρ against DJF ONI. National series = mean o
 ## Publishing the app on rikhard.fi (GitHub Pages + Squarespace embed)
 Squarespace cannot serve the data bundle from a code block, so the app is hosted on GitHub Pages and
 embedded in the blog post.
-1. Create a GitHub repository (public; Pages on the free plan needs a public repo) and push this folder
-   (`data/raw/` is ignored; `app/` is what gets published, ~30 MB with the daily files).
-2. In the repo: Settings → Pages → Source = "GitHub Actions". The workflow in
-   `.github/workflows/pages.yml` publishes `app/` on every push to `main`. The app appears at
-   `https://<user>.github.io/<repo>/`.
+1. Repository: https://github.com/rikhardfi/el-nino-years (public; Pages on the free plan needs a public
+   repo). `data/raw/` is ignored; `app/` is what gets published (~25 MB with the daily files).
+2. Pages source = "GitHub Actions". The workflow in `.github/workflows/pages.yml` publishes `app/` on
+   every push to `main`. Live app: https://rikhardfi.github.io/el-nino-years/
+   Deep links: `?preset=olos` opens the Muonio (Olos) November view, `?lang=fi` the Finnish UI.
 3. Optional custom subdomain: add a `CNAME` file in `app/` with e.g. `elnino.rikhard.fi` and a DNS CNAME
    record `elnino → <user>.github.io` at the registrar; enable "Enforce HTTPS" in Pages.
 4. In Squarespace, add a Code block to the post:
-   `<iframe src="https://<user>.github.io/<repo>/" style="width:100%;height:1400px;border:0" loading="lazy" title="Nordic winters and El Niño strength"></iframe>`
+   `<iframe src="https://rikhardfi.github.io/el-nino-years/?preset=olos" style="width:100%;height:1400px;border:0" loading="lazy" title="Nordic winters and El Niño strength"></iframe>`
    and a plain link to the full-screen version above it for phones.
 5. To update: rerun the pipeline, commit, push. Pages redeploys in about a minute.

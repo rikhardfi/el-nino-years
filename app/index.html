@@ -4,31 +4,55 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nordic winters and El Niño strength</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("enso_theme")==="light"?"light":"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
 <style>
+  /* Theme tokens. Dark is the default; [data-theme=light] is the rikhardplot publication palette
+     (white panel, black border, grey40 subtitles) and is also what PNG export uses. */
   :root{
-    --bg:#fbfbfa; --surface:#ffffff; --line:#e3e2de; --grid:#eeede9;
-    --text:#161616; --text2:#52514e; --muted:#8a8983;
+    color-scheme:dark;
+    --bg:#131416; --surface:#1b1d20; --panel:#1b1d20; --line:#33363b; --grid:#2a2d31;
+    --text:#ececea; --text2:#b4b3ae; --muted:#8a8983; --ink:#ececea;
+    --super:#e2565c; --elnino:#f0855a; --neutral:#a4a39e; --lanina:#5b9cf0;
+    --accent:#5b9cf0; --accent-text:#0e1116;
+    --tip-bg:#f3f2ef; --tip-text:#161616;
+    --howto-bg:#1c2330; --howto-line:#2c3a52;
+    --warn-bg:#2d2116; --warn-line:#5a3d20; --warn-text:#f2c9a0;
+    --tracker-bg:#2a1b1c; --tracker-line:#57292b;
+    --olos-bg:#182219; --olos-line:#2c452f;
+    --sea:#1a2230; --land:#26292d; --nordic:#3a3e44; --shore:#131416; --divmid:#5a5d63;
+  }
+  :root[data-theme=light]{
+    color-scheme:light;
+    --bg:#fbfbfa; --surface:#ffffff; --panel:#ffffff; --line:#e3e2de; --grid:#eeede9;
+    --text:#161616; --text2:#666666; --muted:#8a8983; --ink:#000000;
     --super:#b3262c; --elnino:#eb6834; --neutral:#8a8983; --lanina:#2a78d6;
-    --accent:#1c5cab;
+    --accent:#1c5cab; --accent-text:#ffffff;
+    --tip-bg:#161616; --tip-text:#ffffff;
+    --howto-bg:#f6f9fd; --howto-line:#cfdcef;
+    --warn-bg:#fff4ea; --warn-line:#f0d3b8; --warn-text:#7a3b12;
+    --tracker-bg:#fdf6f6; --tracker-line:#efd2d3;
+    --olos-bg:#f4f8f4; --olos-line:#cfe1cf;
+    --sea:#f3f6fa; --land:#ececea; --nordic:#dcdcd8; --shore:#ffffff; --divmid:#f0efec;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45}
+    font-family:"Helvetica Neue",Helvetica,Arial,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.45}
   header{padding:18px 24px 10px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;gap:16px;align-items:flex-start}
   header .hd{flex:1 1 auto}
-  header h1{margin:0;font-size:20px;font-weight:650;letter-spacing:.1px}
+  header h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.1px}
   header p{margin:4px 0 0;color:var(--text2);font-size:13px;max-width:900px}
+  header .hdbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch}
   #controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;padding:12px 24px;
     background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
   .ctl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text2)}
   .ctl select,.ctl input[type=range],.ctl input[type=number]{font:inherit;font-size:13px;color:var(--text)}
-  .ctl select,.ctl input[type=number]{padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;min-width:60px}
+  .ctl select,.ctl input[type=number]{padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:60px}
   .ctl select{min-width:130px}
   .ctl .val{font-weight:600;color:var(--text)}
-  .row{display:flex;gap:6px;align-items:center}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
   .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-  .seg button{border:0;background:#fff;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer;color:var(--text2)}
-  .seg button.on{background:var(--accent);color:#fff}
+  .seg button{border:0;background:var(--surface);padding:5px 10px;font:inherit;font-size:13px;cursor:pointer;color:var(--text2);white-space:nowrap}
+  .seg button.on{background:var(--accent);color:var(--accent-text)}
   .seg button:disabled{opacity:.45;cursor:default}
   main{padding:14px 24px 40px;max-width:1400px;margin:0 auto}
   .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text2);margin:6px 0 10px}
@@ -36,44 +60,52 @@
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:980px){.grid{grid-template-columns:1fr}}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px 8px;min-width:0;position:relative}
-  .card h2{margin:0 0 2px;font-size:14px;font-weight:650;padding-right:70px}
+  .card h2{margin:0 0 2px;font-size:14px;font-weight:700;padding-right:70px}
   .card .sub{margin:0 0 6px;font-size:12px;color:var(--text2)}
+  .card .note{font-style:italic}
   .card svg{display:block;width:100%;height:auto;overflow:hidden}
   [hidden]{display:none!important}
   .card.wide{grid-column:1 / -1}
   .card .png{position:absolute;top:10px;right:12px;font-size:11.5px;padding:3px 8px}
+  /* rikhardplot theme_publication: bordered panel, no gridlines, bold axis titles, plain tick labels */
+  .panel{fill:var(--panel);stroke:var(--ink);stroke-width:1.2}
   .axis text{fill:var(--text2);font-size:11px}
-  .axis line,.axis path{stroke:var(--line)}
-  .gridline{stroke:var(--grid)}
+  .axis line,.axis path{stroke:var(--ink)}
+  .axis-title{fill:var(--ink);font-weight:700;font-size:11px}
+  .chartlegend text{fill:var(--text);font-size:11px}
   .zero{stroke:var(--muted);stroke-dasharray:3 3}
-  .tooltip{position:fixed;pointer-events:none;background:#161616;color:#fff;font-size:12px;padding:6px 8px;
+  .tooltip{position:fixed;pointer-events:none;background:var(--tip-bg);color:var(--tip-text);font-size:12px;padding:6px 8px;
     border-radius:6px;opacity:0;transition:opacity .08s;z-index:20;max-width:260px;line-height:1.35}
   table{border-collapse:collapse;width:100%;font-size:12.5px}
   th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
   th{color:var(--text2);font-weight:600}
   th:first-child,td:first-child{text-align:left}
-  td.sig{font-weight:650}
-  .btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--text)}
-  .btn:hover{background:#f3f2ef}
-  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  td.sig{font-weight:700}
+  .btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--text)}
+  .btn:hover{background:var(--grid)}
+  .btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
   details{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-  details.howto{margin:0 0 14px;border-color:#cfdcef;background:#f6f9fd}
-  summary{cursor:pointer;font-weight:650}
-  details p,details li{color:var(--text2);font-size:13px}
+  details.howto{margin:0 0 14px;border-color:var(--howto-line);background:var(--howto-bg)}
+  summary{cursor:pointer;font-weight:700}
+  details p,details li,details dd{color:var(--text2);font-size:13px}
   details ol{margin:6px 0 4px;padding-left:22px}
+  details dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:8px 0 4px}
+  details dt{font-weight:700;font-size:13px}
+  details dd{margin:0}
+  @media (max-width:600px){details dl{grid-template-columns:1fr} details dd{margin:0 0 6px}}
   .note{font-size:12px;color:var(--text2)}
-  .warn{font-size:12.5px;color:#7a3b12;background:#fff4ea;border:1px solid #f0d3b8;border-radius:6px;padding:6px 10px;margin:6px 0}
+  .warn{font-size:12.5px;color:var(--warn-text);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:6px;padding:6px 10px;margin:6px 0}
   .maplegend text{fill:var(--text2);font-size:11px}
-  .tracker{background:#fdf6f6;border:1px solid #efd2d3;border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px}
-  .tracker h2{margin:0 0 4px;font-size:14px;font-weight:650}
-  .tracker .big{font-size:22px;font-weight:650;color:var(--super)}
+  .tracker{background:var(--tracker-bg);border:1px solid var(--tracker-line);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px}
+  .tracker h2{margin:0 0 4px;font-size:14px;font-weight:700}
+  .tracker .big{font-size:22px;font-weight:700;color:var(--super)}
   .tracker .cols{display:flex;gap:24px;flex-wrap:wrap}
   .tracker .cols > div{flex:1 1 280px;min-width:0}
   .tracker ul{margin:4px 0;padding-left:18px}
-  .olos{background:#f4f8f4;border:1px solid #cfe1cf;border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px}
-  .olos h2{margin:0 0 4px;font-size:14px;font-weight:650}
+  .olos{background:var(--olos-bg);border:1px solid var(--olos-line);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px}
+  .olos h2{margin:0 0 4px;font-size:14px;font-weight:700}
   .olos table{width:auto;margin-top:6px}
-  .langbtn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .langbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:6px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
   svg{overflow:hidden}
 </style>
 </head>
@@ -85,15 +117,18 @@
        grouped by the ENSO phase of each winter (NOAA Oceanic Niño Index). Compares super El Niño winters with
        ordinary El Niño, neutral and La Niña winters. Everything on this page is computed in the browser from the bundled data.</p>
   </div>
-  <button class="langbtn" id="lang" title="Kieli / Language">Suomeksi</button>
+  <div class="hdbtns">
+    <button class="langbtn" id="lang" title="Kieli / Language">Suomeksi</button>
+    <button class="langbtn" id="theme" data-i18n="themeBtn" data-i18n-title="themeTitle">Light mode</button>
+  </div>
 </header>
 
 <div id="controls">
-  <div class="ctl"><label data-i18n="window">Window</label>
+  <div class="ctl"><label data-i18n="window">Time window</label>
     <div class="row">
       <div class="seg" id="preset">
-        <button data-v="DJF">DJF</button><button data-v="JFM">JFM</button><button data-v="NDJFM">NDJFM</button>
-        <button data-v="NOV" data-i18n="november">November</button><button data-v="CUSTOM" data-i18n="custom">Custom</button>
+        <button data-v="DJF" data-i18n="pDJF" data-i18n-title="tDJF">Dec–Feb (DJF)</button><button data-v="JFM" data-i18n="pJFM" data-i18n-title="tJFM">Jan–Mar (JFM)</button><button data-v="NDJFM" data-i18n="pNDJFM" data-i18n-title="tNDJFM">Nov–Mar (NDJFM)</button>
+        <button data-v="NOV" data-i18n="november" data-i18n-title="tNOV">November only</button><button data-v="CUSTOM" data-i18n="custom" data-i18n-title="tCUSTOM">Custom months</button>
       </div>
       <select id="m0" style="min-width:90px"></select><span class="note" data-i18n="to">to</span><select id="m1" style="min-width:90px"></select>
     </div></div>
@@ -107,7 +142,7 @@
   <div class="ctl"><label data-i18n="level">Level</label>
     <div class="seg" id="level"><button data-v="country" class="on" data-i18n="country">Country</button><button data-v="site" data-i18n="site">Site</button></div></div>
   <div class="ctl"><label data-i18n="unit">Unit</label><select id="unit"></select></div>
-  <div class="ctl"><label><span data-i18n="thr">Super El Niño threshold (event peak ONI)</span> <span class="val" id="thrval">2.0</span></label>
+  <div class="ctl"><label><span data-i18n="thr">Super El Niño threshold (peak Oceanic Niño Index of the event, °C)</span> <span class="val" id="thrval">2.0</span></label>
     <input type="range" id="thr" min="1.5" max="2.5" step="0.1" value="2.0" style="width:170px"></div>
   <div class="ctl"><label data-i18n="mapc">Map contrast</label>
     <select id="contrast">
@@ -147,7 +182,7 @@
     <div class="card"><h2 data-i18n="hMap">Map of site contrasts</h2><button class="btn png" data-svg="map">PNG</button><p class="sub" id="mapSub"></p><svg id="map"></svg></div>
     <div class="card"><h2 data-i18n="hTab">Statistics for the current selection</h2><p class="sub" id="tabSub"></p>
       <div style="overflow-x:auto"><table id="tab1"></table></div>
-      <p class="note" style="margin:10px 0 4px" data-i18n="tab2note">Pairwise contrasts (difference of group means, 95% CI: bootstrap, or Welch t-interval when a group has n &lt; 6; permutation p; Cohen's d), computed in the browser at the chosen threshold:</p>
+      <p class="note" style="margin:10px 0 4px" data-i18n="tab2note">Pairwise contrasts (difference of group means, 95 % interval: bootstrap, or Welch t-interval when a group has n &lt; 6; permutation p; Cohen's d), computed in the browser at the chosen threshold:</p>
       <div style="overflow-x:auto"><table id="tab2"></table></div>
       <p class="note" id="pipeNote" style="margin:10px 0 4px"></p>
       <div style="overflow-x:auto"><table id="tab3"></table></div>
@@ -158,6 +193,10 @@
   <details id="about">
     <summary data-i18n="aboutTitle">About the data and methods</summary>
     <ul id="aboutList"></ul>
+  </details>
+  <details id="gloss">
+    <summary data-i18n="glossTitle">Abbreviations used on this page</summary>
+    <dl id="glossList"></dl>
   </details>
 </main>
 <div class="tooltip" id="tip"></div>
@@ -170,7 +209,14 @@
 (function(){
 const D = window.ENSO_DATA;
 const M = D.meta;
-const COL = {super:"#b3262c", elnino:"#eb6834", neutral:"#8a8983", lanina:"#2a78d6"};
+// Colours come from the CSS theme tokens so the charts follow dark/light mode; PNG export always uses the light set.
+const THEME = {};
+const THEME_KEYS = ["super","elnino","neutral","lanina","ink","text","text2","muted","panel","line","surface","sea","land","nordic","shore","divmid"];
+function refreshTheme(){ const cs=getComputedStyle(document.documentElement); THEME_KEYS.forEach(k=>THEME[k]=cs.getPropertyValue("--"+k).trim()); }
+const COL = new Proxy({}, {get:(_,g)=>THEME[g]});
+let THEME_NAME = "dark";
+try { THEME_NAME = localStorage.getItem("enso_theme")==="light" ? "light" : "dark"; } catch(e) {}
+function applyTheme(){ document.documentElement.dataset.theme=THEME_NAME; refreshTheme(); }
 const GROUPS = M.groups;
 const tip = document.getElementById("tip");
 const MONTHS = M.month_order || [10,11,12,1,2,3,4];       // window order Oct..Apr
@@ -191,80 +237,112 @@ const oniCorr = objs(D.oni_corr);
 const T = {
  en: {
   title:"Nordic winters and El Niño strength",
-  intro:"Winter temperature, precipitation, snow, frost and thaw metrics in Finland and the other Nordic countries, grouped by the ENSO phase of each winter (NOAA Oceanic Niño Index). Compares super El Niño winters with ordinary El Niño, neutral and La Niña winters. Everything on this page is computed in the browser from the bundled data.",
-  window:"Window", november:"November", custom:"Custom", to:"to", metric:"Metric", variant:"Variant",
+  intro:"Winter temperature, precipitation, snow, frost and thaw metrics in Finland and the other Nordic countries, grouped by the El Niño–Southern Oscillation (ENSO) phase of each winter, taken from the NOAA Oceanic Niño Index (ONI). Compares super El Niño winters with ordinary El Niño, neutral and La Niña winters. Everything on this page is computed in the browser from the bundled data.",
+  window:"Time window", pDJF:"Dec–Feb (DJF)", pJFM:"Jan–Mar (JFM)", pNDJFM:"Nov–Mar (NDJFM)", november:"November only", custom:"Custom months",
+  tDJF:"DJF = December, January and February: the standard meteorological winter and the season the Oceanic Niño Index is read for.",
+  tJFM:"JFM = January, February and March: late winter, the window in which the literature places the European El Niño signal.",
+  tNDJFM:"NDJFM = November, December, January, February and March: the whole five-month cold season.",
+  tNOV:"November alone: the early-season window that matters for the Olos conditions.",
+  tCUSTOM:"Any range of whole months between October and April, aggregated in the browser from monthly values.",
+  themeBtn:"Light mode", themeTitle:"Switch between dark and light display. PNG exports always use the light, print-style palette.",
+  to:"to", metric:"Metric", variant:"Variant",
   v1:"Raw value", v2:"Anomaly vs 1991–2020", v3:"Detrended anomaly", level:"Level", country:"Country", site:"Site", unit:"Unit",
-  thr:"Super El Niño threshold (event peak ONI)", mapc:"Map contrast", c1:"Super vs neutral", c2:"Super vs El Niño", c3:"El Niño vs neutral", c4:"La Niña vs neutral",
+  thr:"Super El Niño threshold (peak Oceanic Niño Index of the event, °C)", mapc:"Map contrast", c1:"Super vs neutral", c2:"Super vs El Niño", c3:"El Niño vs neutral", c4:"La Niña vs neutral",
   presets:"Presets", olosBtn:"Olos, November", dayBtn:"Day range…", dayrange:"Day range (site level only)", apply:"Apply", dayOff:"Back to months",
   howtoTitle:"How to use this page",
-  howto:["Pick a window (DJF, JFM, November, or a custom month range), a metric, a variant (raw, anomaly, or detrended anomaly) and a unit (a country mean or a single station).",
+  howto:["Pick a time window (December to February, January to March, November to March, November alone, or a custom month range), a metric, a variant (raw, anomaly, or detrended anomaly) and a unit (a country mean or a single station).",
          "Read the group composite: the black dot is the group mean, the bar its 95 % interval, the small points are single winters. Hover a point to see which winter it is.",
          "Check the winter-by-winter chart to see how the three super El Niño winters sit among all the others before trusting any group mean.",
          "Move the threshold slider to see how the super group changes when events peaking at 1.8 or 1.9 °C are included.",
          "Export a chart as PNG with the button in its corner, or download the numbers as CSV under the statistics table. The day-range button opens an advanced mode for a single station."],
   howtoNote:"The three super El Niño winters at the default threshold are 1982/83, 1997/98 and 2015/16. Three cases give wide intervals; read the winter-by-winter chart before the group means.",
-  hComp:"Group composite", hScat:"ONI vs metric", hTS:"Winter by winter", hMap:"Map of site contrasts", hTab:"Statistics for the current selection",
-  tab2note:"Pairwise contrasts (difference of group means, 95% CI: bootstrap, or Welch t-interval when a group has n < 6; permutation p; Cohen's d), computed in the browser at the chosen threshold:",
+  hComp:"Group composite", hScat:"Oceanic Niño Index vs metric", hTS:"Winter by winter", hMap:"Map of site contrasts", hTab:"Statistics for the current selection",
+  tab2note:"Pairwise contrasts (difference of group means, 95 % interval: bootstrap, or Welch t-interval when a group has n < 6; permutation p; Cohen's d), computed in the browser at the chosen threshold:",
   dl1:"Download CSV of the winter series", dl2:"Download CSV of the statistics", aboutTitle:"About the data and methods",
   groups:{super:"Super El Niño", elnino:"El Niño", neutral:"Neutral", lanina:"La Niña"},
   monthsShort:["Oct","Nov","Dec","Jan","Feb","Mar","Apr"], monthsLong:["October","November","December","January","February","March","April"],
   nodata:"No data for this selection", noDataGroups:"Not enough winters in both groups for this metric",
-  compSub:(u)=>`${u}. Group means with 95% CI (bootstrap; t-interval when n < 6); each point is one winter.`,
+  compSub:(u)=>`${u}. Group means with 95 % intervals (bootstrap; t-interval when n < 6); each point is one winter.`,
   scatSub:(u,rho,n,p)=>`${u}. Spearman rho = ${rho} (n = ${n})${p?`, pipeline p = ${p}`:""}.`,
   tsSub:(u,w)=>`${u}, ${w}. Points coloured by ENSO group; super El Niño winters labelled.`,
   mapSub:(g1,g2,v,w)=>`${g1} minus ${g2}: difference of site means, ${v.toLowerCase()}, ${w}. Bold outline: permutation p < 0.05. Click a site to select it.`,
   mapDay:"The map is not available in day-range mode (daily data are loaded for one station at a time).",
   tabSub:(u,w,m,v,t)=>`${u}, ${w}, ${m}, ${v.toLowerCase()}. Super threshold ${t}.`,
-  thGroup:"Group", thN:"n", thMean:"Mean", thCI:"95% CI", thMedian:"Median", thSD:"SD", thWinters:"Winters", thContrast:"Contrast", thDiff:"Difference", thP:"Permutation p", thWelch:"Welch p", thD:"Cohen's d",
+  thGroup:"Group", thN:"n (winters)", thMean:"Mean", thCI:"95 % interval", thMedian:"Median", thSD:"Std. dev.", thWinters:"Winters", thContrast:"Contrast", thDiff:"Difference", thP:"Permutation p", thWelch:"Welch p", thD:"Cohen's d",
   pipeNote:(t)=>`Cross-check: the same contrasts from the Python pipeline (threshold ${t}, 4000 bootstrap draws or t-intervals for small groups, 5000 permutations), as used in the PDF report:`,
   superAt:(t,l)=>`Super El Niño winters at ${t}: ${l}`, none:"none",
-  eventPeak:"event peak", oniAxis:"DJF Oceanic Niño Index (°C)", diffLegend:(u)=>`Difference (${u})`, vs:"vs",
+  eventPeak:"event peak", oniAxis:"Oceanic Niño Index, Dec–Feb (°C)", oniShort:"ONI Dec–Feb", diffLegend:(u)=>`Difference (${u})`, vs:"vs",
   dayNote:(r,u)=>`Day-range mode: ${r} at ${u}, computed from daily observations (at least 90 % of the days required per winter). Country level, the map and the pipeline cross-check are not available in this mode.`,
   dayLoading:"Loading daily data…", dayMissing:(u)=>`No daily file for ${u} (data/daily/${u}.js). Choose another station or go back to months.`,
   dayBad:"The end of the range must come after the start (within 1 October to 30 April).",
   customNote:(w)=>`Custom window ${w}: monthly values aggregated in the browser; anomalies and trends recomputed for this window (baseline 1991–2020, trend fitted on 1950 onward).`,
   trackerTitle:"Developing event, winter 2026/27",
-  latest:(s,y)=>`Latest ONI (${s} ${y})`,
+  latest:(s,y)=>`Latest Oceanic Niño Index (${s} ${y})`,
   soFar:(f,n,p)=>`El Niño conditions since ${f}: ${n} overlapping seasons so far, peak ${p} °C.`,
-  noEvent:"No event under way in the latest ONI table.",
+  noEvent:"No event under way in the latest Oceanic Niño Index table.",
   wouldBe:(t)=>`If the peak reaches ${t} °C, the coming winter would fall in the super El Niño group at the current threshold; below that it would be an ordinary El Niño winter.`,
   lastTime:(w,m,u)=>`What happened last time (${w}, ${m}, ${u}):`,
-  fetched:(d)=>`Static data refreshed by the pipeline; ONI and CPC text fetched ${d}. Source: NOAA Climate Prediction Center.`,
-  cpc:"NOAA CPC status",
+  fetched:(d)=>`Static data refreshed by the pipeline; Oceanic Niño Index and Climate Prediction Center text fetched ${d}. Source: NOAA Climate Prediction Center.`,
+  cpc:"NOAA Climate Prediction Center status",
   olosTitle:"Olos, November: the three super El Niño winters at Muonio Alamuonio (5 km from Olos)",
   olosIntro:(m)=>`November values at Muonio Alamuonio (GHCN-Daily, 1959 onward). Current metric: ${m}. Anomalies against 1991–2020; the detrended value removes the linear trend fitted on 1950 onward.`,
   olosNoData:"Muonio data for November are not in the bundle yet.",
   olosMeans:(m,s,n,e)=>`Group means for ${m} in November: super El Niño ${s}, ordinary El Niño ${e}, neutral ${n}.`,
   olosThVal:"Value", olosThAnom:"Anomaly", olosThDT:"Detrended", olosWinter:"Winter", olosTmean:"Mean temperature (°C)", olosSnow:"Snow depth (cm)", olosCover:"Snow-cover days",
   raw:"raw", anom:"anomaly", dt:"detrended",
+  glossTitle:"Abbreviations used on this page",
+  gloss:[
+   ["ENSO","El Niño–Southern Oscillation: the coupled ocean–atmosphere cycle of the tropical Pacific. Its warm phase is El Niño, its cold phase La Niña."],
+   ["ONI","Oceanic Niño Index: NOAA's three-month running mean of the sea surface temperature anomaly in the Niño 3.4 region, in °C. Values at or above +0.5 °C count towards El Niño, at or below −0.5 °C towards La Niña."],
+   ["DJF, JFM, NDJFM","Month windows named by their initial letters: December–January–February, January–February–March, and November to March (five months). DJF is the standard meteorological winter."],
+   ["NOAA, CPC","US National Oceanic and Atmospheric Administration and its Climate Prediction Center, the source of the ONI and of the event status text in the tracker."],
+   ["GHCN-Daily","Global Historical Climatology Network Daily: NOAA's archive of daily station observations, used here for Sweden, Norway, Denmark, Iceland and Muonio."],
+   ["FMI","Finnish Meteorological Institute (Ilmatieteen laitos), the source of the Finnish station data."],
+   ["ERA5","Fifth-generation reanalysis of the European Centre for Medium-Range Weather Forecasts: a model-based reconstruction of past weather on a grid, used only as a cross-check."],
+   ["ERSSTv5","Extended Reconstructed Sea Surface Temperature, version 5: the sea surface temperature dataset the ONI is computed from."],
+   ["Tmin, Tmax","Daily minimum and maximum air temperature."],
+   ["n, SD","Number of winters in a group; standard deviation."],
+   ["95 % interval","95 % confidence interval of a mean or of a difference of means (bootstrap, or t-interval for small groups)."],
+   ["Permutation p","Two-sided p-value from shuffling group labels: how often a random split of the winters gives a difference at least as large as the observed one."],
+   ["Cohen's d","Difference of group means divided by the pooled standard deviation; a unit-free effect size."],
+   ["Spearman rho","Rank correlation between the ONI and the metric across all labelled winters."],
+   ["CSV, PNG","Comma-separated values file (opens in Excel or R); portable network graphics image."]
+  ],
   about:[
-   "<b>ENSO classification.</b> NOAA Climate Prediction Center Oceanic Niño Index (ONI, ERSSTv5, 3-month running mean of Niño 3.4 SST anomaly), 1950 onward. An event is at least five consecutive overlapping seasons with ONI at or beyond ±0.5 °C. A winter is labelled by the year of its January (1997/98 is \"1998\") and by the DJF ONI season. It is \"super El Niño\" when its event peak reaches the threshold set by the slider (default 2.0 °C) and it is the winter that contains the peak. At 2.0 °C that is 1982/83, 1997/98 and 2015/16, so n = 3 and the confidence intervals are wide by construction; 2023/24 peaked at 1.99 °C and moves into the super group at 1.9. Other winters inside an El Niño event are \"El Niño\"; La Niña and neutral winters are the two reference groups.",
+   "<b>ENSO classification.</b> NOAA Climate Prediction Center Oceanic Niño Index (ONI, ERSSTv5, 3-month running mean of Niño 3.4 sea surface temperature anomaly), 1950 onward. An event is at least five consecutive overlapping seasons with ONI at or beyond ±0.5 °C. A winter is labelled by the year of its January (1997/98 is \"1998\") and by the ONI of its December to February (DJF) season. It is \"super El Niño\" when its event peak reaches the threshold set by the slider (default 2.0 °C) and it is the winter that contains the peak. At 2.0 °C that is 1982/83, 1997/98 and 2015/16, so n = 3 and the confidence intervals are wide by construction; 2023/24 peaked at 1.99 °C and moves into the super group at 1.9. Other winters inside an El Niño event are \"El Niño\"; La Niña and neutral winters are the two reference groups.",
    "<b>Finland.</b> Finnish Meteorological Institute open data (daily tday, tmax, tmin, rrday, snow) for 13 long-record stations, 1959 onward for most, Helsinki Kaisaniemi from 1900 and Sodankylä Tähtelä from 1908. Several airport stations stopped reporting precipitation and snow depth around 2008 when they became automatic; temperature continues. Muonio Alamuonio (the Olos station) comes from GHCN-Daily and is shown as a site but not included in the Finnish national mean.",
    "<b>Sweden, Norway, Denmark, Iceland.</b> NOAA GHCN-Daily station files (TMAX, TMIN, TAVG when present, PRCP, SNWD). Daily mean is TAVG where reported, otherwise (TMAX + TMIN)/2. Danish coverage in GHCN is patchy and four stations are combined.",
    "<b>ERA5 (Open-Meteo archive API).</b> Reanalysis series at selected points, shown as a separate cross-check unit where fetched. Open-Meteo weights long requests heavily against its free quota, so only a subset of points is included.",
    "<b>Metrics.</b> Means or sums per site and window; day counts are scaled to the full window length when a few days are missing. A window is used only if at least 90 % of its days are present (for month windows, every month must pass the rule). Frost day: Tmin below 0 °C. Ice day: Tmax below 0 °C. Thaw day: Tmax above 0 °C. Rain-on-snow day: at least 1 mm of liquid precipitation with at least 1 cm of snow on the ground (liquid = precipitation on days with mean temperature above 0.5 °C where rain is not reported separately).",
-   "<b>Windows.</b> DJF, JFM and NDJFM use values precomputed by the pipeline. November and custom month ranges are aggregated in the browser from monthly values (day-weighted means for temperatures and snow depth, sums for counts and precipitation, maximum for maximum snow depth). The day-range mode loads one station's daily observations and computes the same metrics for any range between 1 October and 30 April.",
+   "<b>Windows.</b> The three preset windows (DJF: December to February; JFM: January to March; NDJFM: November to March) use values precomputed by the pipeline. November and custom month ranges are aggregated in the browser from monthly values (day-weighted means for temperatures and snow depth, sums for counts and precipitation, maximum for maximum snow depth). The day-range mode loads one station's daily observations and computes the same metrics for any range between 1 October and 30 April.",
    "<b>Anomalies.</b> Anomaly = value minus the 1991–2020 mean for the same site, window and metric. Detrended anomaly = residual from an ordinary least squares line fitted through the winters from 1950 onward. Detrending matters here because the three super El Niño winters all fall in the warmer half of the record.",
    "<b>Country series.</b> Mean of the station values within the country for each winter (FMI stations for Finland, GHCN stations elsewhere; at least two stations required). The Nordic mean averages the five national series.",
-   "<b>Statistics.</b> Group means with 95 % CIs (percentile bootstrap, 2000 draws, fixed seed; t-intervals for groups smaller than 6 because a bootstrap of three values has only ten distinct resamples), pairwise differences with permutation p-values (2000 shuffles) and Cohen's d, and Spearman correlation with the DJF ONI across all labelled winters. With n = 3 in the super group, none of this is a test of a hypothesis so much as a description of three winters; read the winter-by-winter chart first.",
+   "<b>Statistics.</b> Group means with 95 % CIs (percentile bootstrap, 2000 draws, fixed seed; t-intervals for groups smaller than 6 because a bootstrap of three values has only ten distinct resamples), pairwise differences with permutation p-values (2000 shuffles) and Cohen's d, and Spearman correlation with the December to February ONI across all labelled winters. With n = 3 in the super group, none of this is a test of a hypothesis so much as a description of three winters; read the winter-by-winter chart first.",
    "<b>Developing event.</b> The tracker panel shows the latest ONI value and the NOAA CPC status text as fetched by the pipeline on the date shown. The page itself is static; it does not call any server."
   ]
  },
  fi: {
   title:"Pohjoismaiden talvet ja El Niñon voimakkuus",
-  intro:"Talven lämpötila, sademäärä, lumi, pakkas- ja suojapäivät Suomessa ja muissa Pohjoismaissa, ryhmiteltyinä kunkin talven ENSO-vaiheen mukaan (NOAA:n Oceanic Niño -indeksi). Vertaa super El Niño -talvia tavallisiin El Niño-, neutraaleihin ja La Niña -talviin. Kaikki tällä sivulla lasketaan selaimessa mukana olevasta aineistosta.",
-  window:"Ikkuna", november:"Marraskuu", custom:"Oma", to:"–", metric:"Mittari", variant:"Muoto",
+  intro:"Talven lämpötila, sademäärä, lumi, pakkas- ja suojapäivät Suomessa ja muissa Pohjoismaissa, ryhmiteltyinä kunkin talven ENSO-vaiheen (El Niño ja eteläinen oskillaatio) mukaan, joka luetaan NOAA:n Oceanic Niño -indeksistä (ONI). Vertaa super El Niño -talvia tavallisiin El Niño-, neutraaleihin ja La Niña -talviin. Kaikki tällä sivulla lasketaan selaimessa mukana olevasta aineistosta.",
+  window:"Aikaikkuna", pDJF:"joulu–helmi (DJF)", pJFM:"tammi–maalis (JFM)", pNDJFM:"marras–maalis (NDJFM)", november:"Vain marraskuu", custom:"Oma kuukausiväli",
+  tDJF:"DJF = joulu-, tammi- ja helmikuu (englannin kuukausien alkukirjaimet): meteorologinen talvi ja kausi, jolta Oceanic Niño -indeksi luetaan.",
+  tJFM:"JFM = tammi-, helmi- ja maaliskuu: lopputalvi, johon kirjallisuus sijoittaa El Niñon vaikutuksen Euroopassa.",
+  tNDJFM:"NDJFM = marras-, joulu-, tammi-, helmi- ja maaliskuu: koko viiden kuukauden kylmä kausi.",
+  tNOV:"Pelkkä marraskuu: Oloksen olosuhteiden kannalta olennainen alkukauden ikkuna.",
+  tCUSTOM:"Mikä tahansa kokonaisten kuukausien väli lokakuusta huhtikuuhun, laskettu selaimessa kuukausiarvoista.",
+  themeBtn:"Vaalea tila", themeTitle:"Vaihda tumman ja vaalean näkymän välillä. PNG-kuvat viedään aina vaalealla, painokelpoisella väripaletilla.",
+  to:"–", metric:"Mittari", variant:"Muoto",
   v1:"Havaittu arvo", v2:"Poikkeama 1991–2020", v3:"Trendikorjattu poikkeama", level:"Taso", country:"Maa", site:"Asema", unit:"Kohde",
-  thr:"Super El Niñon kynnys (tapahtuman ONI-huippu)", mapc:"Kartan vertailu", c1:"Super vs neutraali", c2:"Super vs El Niño", c3:"El Niño vs neutraali", c4:"La Niña vs neutraali",
+  thr:"Super El Niñon kynnys (tapahtuman Oceanic Niño -indeksin huippu, °C)", mapc:"Kartan vertailu", c1:"Super vs neutraali", c2:"Super vs El Niño", c3:"El Niño vs neutraali", c4:"La Niña vs neutraali",
   presets:"Pikavalinnat", olosBtn:"Olos, marraskuu", dayBtn:"Päiväväli…", dayrange:"Päiväväli (vain asemataso)", apply:"Käytä", dayOff:"Takaisin kuukausiin",
   howtoTitle:"Näin käytät sivua",
-  howto:["Valitse ikkuna (DJF, JFM, marraskuu tai oma kuukausiväli), mittari, muoto (havaittu arvo, poikkeama tai trendikorjattu poikkeama) ja kohde (maan keskiarvo tai yksittäinen asema).",
+  howto:["Valitse aikaikkuna (joulu–helmikuu, tammi–maaliskuu, marras–maaliskuu, pelkkä marraskuu tai oma kuukausiväli), mittari, muoto (havaittu arvo, poikkeama tai trendikorjattu poikkeama) ja kohde (maan keskiarvo tai yksittäinen asema).",
          "Lue ryhmävertailu: musta piste on ryhmän keskiarvo, jana sen 95 %:n väli, pienet pisteet yksittäisiä talvia. Vie hiiri pisteen päälle nähdäksesi, mikä talvi se on.",
          "Katso talvi talvelta -kuvaaja nähdäksesi, miten kolme super El Niño -talvea sijoittuvat muiden joukkoon, ennen kuin luotat ryhmäkeskiarvoon.",
          "Siirrä kynnysliukuria nähdäksesi, miten superryhmä muuttuu, kun 1,8 tai 1,9 °C:n huippuun yltäneet tapahtumat otetaan mukaan.",
          "Vie kuvaaja PNG-kuvaksi kulman painikkeesta tai lataa luvut CSV-tiedostona tilastotaulukon alta. Päiväväli-painike avaa yhden aseman tarkemman tilan."],
   howtoNote:"Kolme super El Niño -talvea oletuskynnyksellä ovat 1982/83, 1997/98 ja 2015/16. Kolme tapausta antaa leveät välit; lue talvi talvelta -kuvaaja ennen ryhmäkeskiarvoja.",
-  hComp:"Ryhmävertailu", hScat:"ONI ja mittari", hTS:"Talvi talvelta", hMap:"Asemakohtaiset erot kartalla", hTab:"Tilastot nykyiselle valinnalle",
+  hComp:"Ryhmävertailu", hScat:"Oceanic Niño -indeksi ja mittari", hTS:"Talvi talvelta", hMap:"Asemakohtaiset erot kartalla", hTab:"Tilastot nykyiselle valinnalle",
   tab2note:"Parittaiset erot (ryhmäkeskiarvojen erotus, 95 %:n väli: bootstrap tai Welchin t-väli kun ryhmässä n < 6; permutaatio-p; Cohenin d), laskettu selaimessa valitulla kynnyksellä:",
   dl1:"Lataa talvisarja CSV-muodossa", dl2:"Lataa tilastot CSV-muodossa", aboutTitle:"Aineisto ja menetelmät",
   groups:{super:"Super El Niño", elnino:"El Niño", neutral:"Neutraali", lanina:"La Niña"},
@@ -276,38 +354,56 @@ const T = {
   mapSub:(g1,g2,v,w)=>`${g1} miinus ${g2}: asemakeskiarvojen erotus, ${v.toLowerCase()}, ${w}. Paksu reunus: permutaatio-p < 0,05. Valitse asema napsauttamalla.`,
   mapDay:"Kartta ei ole käytettävissä päivävälitilassa (päiväaineisto ladataan yhdelle asemalle kerrallaan).",
   tabSub:(u,w,m,v,t)=>`${u}, ${w}, ${m}, ${v.toLowerCase()}. Superkynnys ${t}.`,
-  thGroup:"Ryhmä", thN:"n", thMean:"Keskiarvo", thCI:"95 %:n väli", thMedian:"Mediaani", thSD:"SD", thWinters:"Talvet", thContrast:"Vertailu", thDiff:"Erotus", thP:"Permutaatio-p", thWelch:"Welchin p", thD:"Cohenin d",
+  thGroup:"Ryhmä", thN:"n (talvia)", thMean:"Keskiarvo", thCI:"95 %:n väli", thMedian:"Mediaani", thSD:"Keskihajonta", thWinters:"Talvet", thContrast:"Vertailu", thDiff:"Erotus", thP:"Permutaatio-p", thWelch:"Welchin p", thD:"Cohenin d",
   pipeNote:(t)=>`Ristitarkistus: samat vertailut Python-putkesta (kynnys ${t}, 4000 bootstrap-otosta tai t-välit pienille ryhmille, 5000 permutaatiota), kuten PDF-raportissa:`,
   superAt:(t,l)=>`Super El Niño -talvet kynnyksellä ${t}: ${l}`, none:"ei yhtään",
-  eventPeak:"tapahtuman huippu", oniAxis:"DJF Oceanic Niño -indeksi (°C)", diffLegend:(u)=>`Erotus (${u})`, vs:"vs",
+  eventPeak:"tapahtuman huippu", oniAxis:"Oceanic Niño -indeksi, joulu–helmi (°C)", oniShort:"ONI joulu–helmi", diffLegend:(u)=>`Erotus (${u})`, vs:"vs",
   dayNote:(r,u)=>`Päivävälitila: ${r}, ${u}, laskettu päivähavainnoista (vähintään 90 % päivistä vaaditaan talvea kohti). Maataso, kartta ja putken ristitarkistus eivät ole käytettävissä tässä tilassa.`,
   dayLoading:"Ladataan päiväaineistoa…", dayMissing:(u)=>`Asemalle ${u} ei ole päivätiedostoa (data/daily/${u}.js). Valitse toinen asema tai palaa kuukausiin.`,
   dayBad:"Välin lopun on oltava alun jälkeen (1. lokakuuta ja 30. huhtikuuta välillä).",
   customNote:(w)=>`Oma ikkuna ${w}: kuukausiarvot yhdistetty selaimessa; poikkeamat ja trendit laskettu uudelleen tälle ikkunalle (vertailujakso 1991–2020, trendi sovitettu vuodesta 1950).`,
   trackerTitle:"Kehittyvä tapahtuma, talvi 2026/27",
-  latest:(s,y)=>`Tuorein ONI (${s} ${y})`,
+  latest:(s,y)=>`Tuorein Oceanic Niño -indeksi (${s} ${y})`,
   soFar:(f,n,p)=>`El Niño -olot alkaen ${f}: ${n} peräkkäistä kautta tähän mennessä, huippu ${p} °C.`,
-  noEvent:"Tuoreimmassa ONI-taulukossa ei ole käynnissä olevaa tapahtumaa.",
+  noEvent:"Tuoreimmassa Oceanic Niño -indeksin taulukossa ei ole käynnissä olevaa tapahtumaa.",
   wouldBe:(t)=>`Jos huippu yltää ${t} °C:seen, tuleva talvi kuuluisi super El Niño -ryhmään nykyisellä kynnyksellä; sen alle jäädessään se olisi tavallinen El Niño -talvi.`,
   lastTime:(w,m,u)=>`Mitä tapahtui viimeksi (${w}, ${m}, ${u}):`,
-  fetched:(d)=>`Staattinen aineisto, jonka putki päivittää; ONI ja CPC:n teksti haettu ${d}. Lähde: NOAA Climate Prediction Center.`,
-  cpc:"NOAA CPC:n tilanne",
+  fetched:(d)=>`Staattinen aineisto, jonka putki päivittää; Oceanic Niño -indeksi ja Climate Prediction Centerin teksti haettu ${d}. Lähde: NOAA Climate Prediction Center.`,
+  cpc:"NOAA Climate Prediction Centerin tilanne",
   olosTitle:"Olos, marraskuu: kolme super El Niño -talvea Muonion Alamuonion asemalla (5 km Olokselta)",
   olosIntro:(m)=>`Marraskuun arvot Muonio Alamuoniossa (GHCN-Daily, vuodesta 1959). Nykyinen mittari: ${m}. Poikkeamat suhteessa jaksoon 1991–2020; trendikorjattu arvo poistaa vuodesta 1950 sovitetun lineaarisen trendin.`,
   olosNoData:"Muonion marraskuun tiedot eivät ole vielä mukana aineistossa.",
   olosMeans:(m,s,n,e)=>`Ryhmäkeskiarvot marraskuussa, ${m}: super El Niño ${s}, tavallinen El Niño ${e}, neutraali ${n}.`,
   olosThVal:"Arvo", olosThAnom:"Poikkeama", olosThDT:"Trendikorjattu", olosWinter:"Talvi", olosTmean:"Keskilämpötila (°C)", olosSnow:"Lumensyvyys (cm)", olosCover:"Lumipeitepäivät",
   raw:"havaittu", anom:"poikkeama", dt:"trendikorjattu",
+  glossTitle:"Sivulla käytetyt lyhenteet",
+  gloss:[
+   ["ENSO","El Niño–Southern Oscillation, El Niño ja eteläinen oskillaatio: trooppisen Tyynenmeren meren ja ilmakehän yhteinen vaihtelu. Lämmin vaihe on El Niño, kylmä vaihe La Niña."],
+   ["ONI","Oceanic Niño Index: NOAA:n laskema Niño 3.4 -alueen meriveden pintalämpötilan poikkeaman kolmen kuukauden liukuva keskiarvo, °C. Vähintään +0,5 °C lasketaan El Niñoksi, enintään −0,5 °C La Niñaksi."],
+   ["DJF, JFM, NDJFM","Kuukausi-ikkunat englannin kuukausien alkukirjaimilla: joulu–tammi–helmikuu, tammi–helmi–maaliskuu ja marraskuusta maaliskuuhun (viisi kuukautta). DJF on meteorologinen talvi."],
+   ["NOAA, CPC","Yhdysvaltain National Oceanic and Atmospheric Administration ja sen Climate Prediction Center, ONI:n ja seurantapaneelin tilannetekstin lähde."],
+   ["GHCN-Daily","Global Historical Climatology Network Daily: NOAA:n päivittäisten asemahavaintojen arkisto, tässä Ruotsin, Norjan, Tanskan, Islannin ja Muonion lähde."],
+   ["FMI, IL","Ilmatieteen laitos (Finnish Meteorological Institute), Suomen asema-aineiston lähde."],
+   ["ERA5","Euroopan keskipitkien sääennusteiden keskuksen (ECMWF) viidennen sukupolven uusanalyysi: mallipohjainen rekonstruktio menneestä säästä hilassa, tässä vain ristitarkistuksena."],
+   ["ERSSTv5","Extended Reconstructed Sea Surface Temperature, versio 5: meriveden pintalämpötila-aineisto, josta ONI lasketaan."],
+   ["Tmin, Tmax","Vuorokauden alin ja ylin ilman lämpötila."],
+   ["n, SD","Talvien lukumäärä ryhmässä; keskihajonta (standard deviation)."],
+   ["95 %:n väli","Keskiarvon tai keskiarvojen erotuksen 95 %:n luottamusväli (bootstrap tai t-väli pienille ryhmille)."],
+   ["Permutaatio-p","Kaksisuuntainen p-arvo ryhmätunnisteiden sekoittamisesta: kuinka usein satunnainen jako talvista antaa vähintään havaitun suuruisen eron."],
+   ["Cohenin d","Ryhmäkeskiarvojen erotus jaettuna yhdistetyllä keskihajonnalla; yksiköistä riippumaton vaikutuksen koko."],
+   ["Spearmanin rho","Järjestyskorrelaatio ONI:n ja mittarin välillä kaikkien luokiteltujen talvien yli."],
+   ["CSV, PNG","Pilkuin eroteltu tekstitiedosto (avautuu Excelissä tai R:ssä); kuvatiedosto."]
+  ],
   about:[
-   "<b>ENSO-luokitus.</b> NOAA:n Oceanic Niño -indeksi (ONI, ERSSTv5, Niño 3.4 -alueen meriveden lämpötilapoikkeaman kolmen kuukauden liukuva keskiarvo) vuodesta 1950. Tapahtuma on vähintään viisi peräkkäistä, limittäistä kautta, joina ONI on vähintään ±0,5 °C. Talvi nimetään tammikuun vuoden mukaan (1997/98 on \"1998\") ja luokitellaan DJF-kauden ONI:n perusteella. Talvi on \"super El Niño\", kun sen tapahtuman huippu yltää liukurin kynnykseen (oletus 2,0 °C) ja talvi sisältää huipun. Kynnyksellä 2,0 °C näitä ovat 1982/83, 1997/98 ja 2015/16, joten n = 3 ja luottamusvälit ovat väistämättä leveät; 2023/24 huipentui 1,99 °C:seen ja siirtyy superryhmään kynnyksellä 1,9. Muut El Niño -tapahtuman talvet ovat \"El Niño\"; La Niña- ja neutraalit talvet ovat kaksi vertailuryhmää.",
+   "<b>ENSO-luokitus.</b> NOAA:n Oceanic Niño -indeksi (ONI, ERSSTv5, Niño 3.4 -alueen meriveden lämpötilapoikkeaman kolmen kuukauden liukuva keskiarvo) vuodesta 1950. Tapahtuma on vähintään viisi peräkkäistä, limittäistä kautta, joina ONI on vähintään ±0,5 °C. Talvi nimetään tammikuun vuoden mukaan (1997/98 on \"1998\") ja luokitellaan joulu–helmikuun (DJF) ONI:n perusteella. Talvi on \"super El Niño\", kun sen tapahtuman huippu yltää liukurin kynnykseen (oletus 2,0 °C) ja talvi sisältää huipun. Kynnyksellä 2,0 °C näitä ovat 1982/83, 1997/98 ja 2015/16, joten n = 3 ja luottamusvälit ovat väistämättä leveät; 2023/24 huipentui 1,99 °C:seen ja siirtyy superryhmään kynnyksellä 1,9. Muut El Niño -tapahtuman talvet ovat \"El Niño\"; La Niña- ja neutraalit talvet ovat kaksi vertailuryhmää.",
    "<b>Suomi.</b> Ilmatieteen laitoksen avoin data (päivittäiset tday, tmax, tmin, rrday, snow) 13 pitkän sarjan asemalta, useimmat vuodesta 1959, Helsinki Kaisaniemi vuodesta 1900 ja Sodankylä Tähtelä vuodesta 1908. Useat lentoasemat lopettivat sade- ja lumihavainnot noin 2008 automatisoinnin myötä; lämpötila jatkuu. Muonio Alamuonio (Oloksen asema) on GHCN-Daily-aineistosta ja näkyy asemana, mutta ei sisälly Suomen maakeskiarvoon.",
    "<b>Ruotsi, Norja, Tanska, Islanti.</b> NOAA:n GHCN-Daily-asematiedostot (TMAX, TMIN, TAVG kun saatavilla, PRCP, SNWD). Vuorokauden keskilämpötila on TAVG, jos se on raportoitu, muuten (TMAX + TMIN)/2. Tanskan kattavuus GHCN:ssä on aukkoinen, ja neljä asemaa on yhdistetty.",
    "<b>ERA5 (Open-Meteo-arkistorajapinta).</b> Uusanalyysisarjat valituista pisteistä, näytetään erillisenä ristitarkistuskohteena siltä osin kuin ne on haettu. Open-Meteo painottaa pitkiä pyyntöjä raskaasti ilmaiskiintiössään, joten mukana on vain osa pisteistä.",
    "<b>Mittarit.</b> Keskiarvot tai summat asemaa ja ikkunaa kohti; päivälukumäärät skaalataan ikkunan täyteen pituuteen, jos muutama päivä puuttuu. Ikkuna otetaan mukaan vain, jos vähintään 90 % sen päivistä on olemassa (kuukausi-ikkunoissa jokaisen kuukauden on täytettävä sääntö). Pakkaspäivä: Tmin alle 0 °C. Jääpäivä: Tmax alle 0 °C. Suojapäivä: Tmax yli 0 °C. Vesisade lumelle: vähintään 1 mm nestemäistä sadetta, kun maassa on vähintään 1 cm lunta (nestemäinen = sade päivinä, joiden keskilämpötila ylittää 0,5 °C, ellei vesisadetta raportoida erikseen).",
-   "<b>Ikkunat.</b> DJF, JFM ja NDJFM käyttävät putken valmiiksi laskemia arvoja. Marraskuu ja omat kuukausivälit yhdistetään selaimessa kuukausiarvoista (päiväpainotetut keskiarvot lämpötiloille ja lumensyvyydelle, summat lukumäärille ja sateelle, maksimi suurimmalle lumensyvyydelle). Päivävälitila lataa yhden aseman päivähavainnot ja laskee samat mittarit mille tahansa välille 1.10.–30.4.",
+   "<b>Ikkunat.</b> Kolme valmista ikkunaa (DJF: joulu–helmikuu; JFM: tammi–maaliskuu; NDJFM: marras–maaliskuu) käyttävät putken valmiiksi laskemia arvoja. Marraskuu ja omat kuukausivälit yhdistetään selaimessa kuukausiarvoista (päiväpainotetut keskiarvot lämpötiloille ja lumensyvyydelle, summat lukumäärille ja sateelle, maksimi suurimmalle lumensyvyydelle). Päivävälitila lataa yhden aseman päivähavainnot ja laskee samat mittarit mille tahansa välille 1.10.–30.4.",
    "<b>Poikkeamat.</b> Poikkeama = arvo miinus saman aseman, ikkunan ja mittarin keskiarvo 1991–2020. Trendikorjattu poikkeama = jäännös pienimmän neliösumman suorasta, joka on sovitettu talviin vuodesta 1950 alkaen. Trendikorjaus on tässä olennainen, koska kolme super El Niño -talvea osuvat kaikki sarjan lämpimämpään puoliskoon.",
    "<b>Maasarjat.</b> Maan asemien arvojen keskiarvo talvea kohti (Suomessa IL:n asemat, muualla GHCN-asemat; vähintään kaksi asemaa vaaditaan). Pohjoismainen keskiarvo on viiden maasarjan keskiarvo.",
-   "<b>Tilastot.</b> Ryhmäkeskiarvot ja 95 %:n välit (persentiilibootstrap, 2000 otosta, kiinteä siemen; t-välit alle kuuden talven ryhmille, koska kolmen arvon bootstrapissa on vain kymmenen erilaista otosta), parittaiset erot permutaatio-p-arvoineen (2000 sekoitusta) ja Cohenin d sekä Spearmanin korrelaatio DJF-ONI:n kanssa kaikkien luokiteltujen talvien yli. Kun superryhmässä n = 3, kyse ei ole hypoteesin testistä vaan kolmen talven kuvauksesta; lue ensin talvi talvelta -kuvaaja.",
+   "<b>Tilastot.</b> Ryhmäkeskiarvot ja 95 %:n välit (persentiilibootstrap, 2000 otosta, kiinteä siemen; t-välit alle kuuden talven ryhmille, koska kolmen arvon bootstrapissa on vain kymmenen erilaista otosta), parittaiset erot permutaatio-p-arvoineen (2000 sekoitusta) ja Cohenin d sekä Spearmanin korrelaatio joulu–helmikuun ONI:n kanssa kaikkien luokiteltujen talvien yli. Kun superryhmässä n = 3, kyse ei ole hypoteesin testistä vaan kolmen talven kuvauksesta; lue ensin talvi talvelta -kuvaaja.",
    "<b>Kehittyvä tapahtuma.</b> Seurantapaneeli näyttää tuoreimman ONI-arvon ja NOAA CPC:n tilannetekstin sellaisina kuin putki haki ne näytettynä päivänä. Sivu itsessään on staattinen eikä kutsu mitään palvelinta."
   ]
  }
@@ -342,7 +438,7 @@ function windowLabel(short=false){
   const mn=t("monthsShort");
   if(S.i0===S.i1) return t("monthsLong")[S.i0];
   const rng=`${mn[S.i0]}–${mn[S.i1]}`;
-  if(!short && PRESET_SEASON[S.preset]) return `${S.preset} (${rng})`;
+  if(!short && PRESET_SEASON[S.preset]) return `${rng} (${S.preset})`;
   return rng;
 }
 
@@ -569,6 +665,8 @@ document.getElementById("dayBtn").onclick=()=>{ dayPanelOpen=true; document.getE
 document.getElementById("dayApply").onclick=()=>{ S.day={m0:+document.getElementById("dm0").value,d0:+document.getElementById("dd0").value,m1:+document.getElementById("dm1").value,d1:+document.getElementById("dd1").value}; enterDayMode(); };
 document.getElementById("dayOff").onclick=()=>{ dayPanelOpen=false; S.dayMode=false; note(""); render(); };
 document.getElementById("lang").onclick=()=>{ LANG = LANG==="en" ? "fi" : "en"; try{ localStorage.setItem("enso_lang",LANG); }catch(e){} applyLang(); };
+document.getElementById("theme").onclick=()=>{ THEME_NAME = THEME_NAME==="dark" ? "light" : "dark"; try{ localStorage.setItem("enso_theme",THEME_NAME); }catch(e){} applyTheme(); setThemeButton(); render(); };
+function setThemeButton(){ const b=document.getElementById("theme"); b.textContent = THEME_NAME==="dark" ? t("themeBtn") : (LANG==="fi" ? "Tumma tila" : "Dark mode"); b.title=t("themeTitle"); }
 try { const h=localStorage.getItem("enso_howto"); if(h==="closed") document.getElementById("howto").open=false; } catch(e){}
 document.getElementById("howto").addEventListener("toggle", e=>{ try{ localStorage.setItem("enso_howto", e.target.open?"open":"closed"); }catch(err){} });
 
@@ -576,8 +674,11 @@ function applyLang(){
   document.documentElement.lang=LANG;
   document.getElementById("lang").textContent = LANG==="en" ? "Suomeksi" : "In English";
   document.querySelectorAll("[data-i18n]").forEach(el=>{ const v=t(el.dataset.i18n); if(typeof v==="string") el.textContent=v; });
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{ const v=t(el.dataset.i18nTitle); if(typeof v==="string") el.title=v; });
+  setThemeButton();
   document.getElementById("howtoList").innerHTML=t("howto").map(s=>`<li>${s}</li>`).join("");
   document.getElementById("aboutList").innerHTML=t("about").map(s=>`<li>${s}</li>`).join("");
+  document.getElementById("glossList").innerHTML=t("gloss").map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("");
   fillMonths(); fillMetrics(); fillUnits(); render();
 }
 
@@ -593,86 +694,113 @@ function renderLegend(){
     `<span style="--c:transparent;margin-left:auto">${t("superAt")(S.thr.toFixed(1), sw.length?sw.join(", "):t("none"))}</span>`;
 }
 
+// ---------- chart scaffolding ----------
+// Mirrors rikhardplot::theme_publication(): bordered panel, no gridlines, bold axis titles, plain tick labels, legend at the bottom.
+function panel(svg,W,H,m){ svg.append("rect").attr("class","panel").attr("x",m.l).attr("y",m.t).attr("width",W-m.l-m.r).attr("height",H-m.t-m.b).attr("fill",THEME.panel).attr("stroke",THEME.ink).attr("stroke-width",1.2); }
+function axisLeft(svg,y,m){ svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(6).tickSizeOuter(0)).call(g=>g.select(".domain").remove()); }
+function axisBottom(svg,ax,m,H){ svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(ax.tickSizeOuter(0)).call(g=>g.select(".domain").remove()); }
+function axisTitleY(svg,m,H,text){ svg.append("text").attr("class","axis-title").attr("transform","rotate(-90)").attr("x",-(H-m.b+m.t)/2).attr("y",14).attr("text-anchor","middle").attr("fill",THEME.ink).attr("font-weight",700).attr("font-size",11).text(text); }
+function axisTitleX(svg,m,W,y,text){ svg.append("text").attr("class","axis-title").attr("x",(W+m.l-m.r)/2).attr("y",y).attr("text-anchor","middle").attr("fill",THEME.ink).attr("font-weight",700).attr("font-size",11).text(text); }
+function noData(svg,W,H,msg){ svg.append("text").attr("x",W/2).attr("y",H/2).attr("text-anchor","middle").attr("fill",THEME.muted).text(msg); }
+function zeroLine(svg,y,m,W){ if(y.domain()[0]<0 && y.domain()[1]>0) svg.append("line").attr("class","zero").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(0)).attr("y2",y(0)); }
+function chartLegend(svg,W,H,rows){
+  const n=d3.rollup(rows,v=>v.length,r=>r.group);
+  const lg=svg.append("g").attr("class","chartlegend"); let x=0;
+  GROUPS.filter(g=>n.get(g)).forEach(g=>{
+    const gi=lg.append("g").attr("transform",`translate(${x},0)`);
+    gi.append("circle").attr("cx",5).attr("cy",-4).attr("r",4.5).attr("fill",THEME[g]);
+    const tx=gi.append("text").attr("x",14).attr("fill",THEME.text).attr("font-size",11).text(`${GL[g]} (n = ${n.get(g)})`);
+    let w=0; try{ w=tx.node().getComputedTextLength(); }catch(e){} if(!w) w=tx.text().length*6.2;
+    x+=14+w+18;
+  });
+  lg.attr("transform",`translate(${(W-x+18)/2},${H-8})`);
+}
+
 // ---------- composite ----------
 function renderComposite(){
   const rows=currentRows(); const W=560,H=340, m={t:14,r:16,b:44,l:56};
   const svg=svgSetup("comp",W,H);
   document.getElementById("compSub").textContent=t("compSub")(unitLabel());
-  if(!rows.length){ svg.append("text").attr("x",W/2).attr("y",H/2).attr("text-anchor","middle").attr("fill","#8a8983").text(t("nodata")); return; }
+  if(!rows.length){ noData(svg,W,H,t("nodata")); return; }
   const x=d3.scaleBand().domain(GROUPS).range([m.l,W-m.r]).padding(0.35);
   const ys=rows.map(r=>r.y); const pad=(d3.max(ys)-d3.min(ys))*0.08||1;
   const y=d3.scaleLinear().domain([d3.min(ys)-pad,d3.max(ys)+pad]).nice().range([H-m.b,m.t]);
-  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(6).tickSize(-(W-m.l-m.r))).call(g=>g.selectAll(".tick line").attr("class","gridline")).call(g=>g.select(".domain").remove());
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).tickFormat(g=>GL[g])).call(g=>g.select(".domain").remove());
-  if(S.variant!==1 && y.domain()[0]<0 && y.domain()[1]>0) svg.append("line").attr("class","zero").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(0)).attr("y2",y(0));
-  svg.append("text").attr("transform","rotate(-90)").attr("x",-(H-m.b+m.t)/2).attr("y",14).attr("text-anchor","middle").attr("fill","#52514e").attr("font-size",11).text(yLabel());
+  panel(svg,W,H,m);
+  axisLeft(svg,y,m);
+  axisBottom(svg,d3.axisBottom(x).tickFormat(g=>GL[g]),m,H);
+  if(S.variant!==1) zeroLine(svg,y,m,W);
+  axisTitleY(svg,m,H,yLabel());
   const rnd=mulberry32(7);
   GROUPS.forEach(g=>{
     const gr=rows.filter(r=>r.group===g); if(!gr.length) return;
     const cx=x(g)+x.bandwidth()/2, jw=x.bandwidth()*0.35;
     svg.append("g").selectAll("circle").data(gr).join("circle")
-      .attr("cx",d=>cx+(rnd()-0.5)*jw).attr("cy",d=>y(d.y)).attr("r",4).attr("fill",COL[g]).attr("fill-opacity",0.55).attr("stroke","#fff").attr("stroke-width",1)
+      .attr("cx",d=>cx+(rnd()-0.5)*jw).attr("cy",d=>y(d.y)).attr("r",4).attr("fill",COL[g]).attr("fill-opacity",0.6).attr("stroke",THEME.panel).attr("stroke-width",1)
       .on("mousemove",(ev,d)=>showTip(ev,`<b>${d.label}</b> · ${GL[g]}<br>${f2(d.y)} ${metricUnit()} · ONI ${f2(d.oni)}`)).on("mouseleave",hideTip);
     const vals=gr.map(r=>r.y), mu=mean(vals), [lo,hi]=bootCI(vals);
-    if(!isNaN(lo)) svg.append("line").attr("x1",cx+jw*0.9).attr("x2",cx+jw*0.9).attr("y1",y(lo)).attr("y2",y(hi)).attr("stroke","#161616").attr("stroke-width",2);
-    svg.append("circle").attr("cx",cx+jw*0.9).attr("cy",y(mu)).attr("r",5.5).attr("fill","#161616").attr("stroke","#fff").attr("stroke-width",1.5);
-    svg.append("text").attr("x",cx+jw*0.9+9).attr("y",y(mu)+4).attr("font-size",11).attr("fill","#161616").attr("font-weight",600).text(f2(mu));
-    svg.append("text").attr("x",cx).attr("y",H-m.b+30).attr("text-anchor","middle").attr("font-size",11).attr("fill","#8a8983").text(`n = ${gr.length}`);
+    if(!isNaN(lo)) svg.append("line").attr("x1",cx+jw*0.9).attr("x2",cx+jw*0.9).attr("y1",y(lo)).attr("y2",y(hi)).attr("stroke",THEME.ink).attr("stroke-width",2);
+    svg.append("circle").attr("cx",cx+jw*0.9).attr("cy",y(mu)).attr("r",5.5).attr("fill",THEME.ink).attr("stroke",THEME.panel).attr("stroke-width",1.5);
+    svg.append("text").attr("x",cx+jw*0.9+9).attr("y",y(mu)+4).attr("font-size",11).attr("fill",THEME.ink).attr("font-weight",700).text(f2(mu));
+    svg.append("text").attr("x",cx).attr("y",H-m.b+30).attr("text-anchor","middle").attr("font-size",11).attr("fill",THEME.muted).text(`n = ${gr.length}`);
   });
 }
 
 // ---------- time series ----------
 function renderTS(){
-  const rows=currentRows().sort((a,b)=>a.winter-b.winter); const W=1140,H=300, m={t:24,r:16,b:34,l:56};
+  const rows=currentRows().sort((a,b)=>a.winter-b.winter); const W=1140,H=320, m={t:24,r:16,b:56,l:56};
   const svg=svgSetup("ts",W,H);
   document.getElementById("tsSub").textContent=t("tsSub")(unitLabel(), windowLabel());
-  if(!rows.length){ svg.append("text").attr("x",W/2).attr("y",H/2).attr("text-anchor","middle").attr("fill","#8a8983").text(t("nodata")); return; }
+  if(!rows.length){ noData(svg,W,H,t("nodata")); return; }
   const x=d3.scaleLinear().domain(d3.extent(rows,r=>r.winter)).range([m.l,W-m.r]);
   const ys=rows.map(r=>r.y); const pad=(d3.max(ys)-d3.min(ys))*0.1||1;
   const y=d3.scaleLinear().domain([d3.min(ys)-pad,d3.max(ys)+pad]).nice().range([H-m.b,m.t]);
-  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(6).tickSize(-(W-m.l-m.r))).call(g=>g.selectAll(".tick line").attr("class","gridline")).call(g=>g.select(".domain").remove());
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(15).tickFormat(d3.format("d")));
-  if(y.domain()[0]<0 && y.domain()[1]>0) svg.append("line").attr("class","zero").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(0)).attr("y2",y(0));
-  svg.append("text").attr("transform","rotate(-90)").attr("x",-(H-m.b+m.t)/2).attr("y",14).attr("text-anchor","middle").attr("fill","#52514e").attr("font-size",11).text(yLabel());
-  svg.append("path").datum(rows).attr("fill","none").attr("stroke","#c9c8c3").attr("stroke-width",1.5).attr("d",d3.line().x(r=>x(r.winter)).y(r=>y(r.y)));
+  panel(svg,W,H,m);
+  axisLeft(svg,y,m);
+  axisBottom(svg,d3.axisBottom(x).ticks(15).tickFormat(d3.format("d")),m,H);
+  zeroLine(svg,y,m,W);
+  axisTitleY(svg,m,H,yLabel());
+  svg.append("path").datum(rows).attr("fill","none").attr("stroke",THEME.line).attr("stroke-width",1.5).attr("d",d3.line().x(r=>x(r.winter)).y(r=>y(r.y)));
   svg.append("g").selectAll("circle").data(rows).join("circle").attr("cx",r=>x(r.winter)).attr("cy",r=>y(r.y)).attr("r",r=>r.group==="super"?6:4)
-    .attr("fill",r=>COL[r.group]).attr("stroke","#fff").attr("stroke-width",1.2);
+    .attr("fill",r=>COL[r.group]).attr("stroke",THEME.panel).attr("stroke-width",1.2);
   rows.filter(r=>r.group==="super").forEach(r=>{
-    svg.append("text").attr("x",x(r.winter)).attr("y",y(r.y)-11).attr("text-anchor","middle").attr("font-size",11).attr("font-weight",600).attr("fill","#161616").text(r.label);
+    svg.append("text").attr("x",x(r.winter)).attr("y",y(r.y)-11).attr("text-anchor","middle").attr("font-size",11).attr("font-weight",700).attr("fill",THEME.ink).text(r.label);
   });
-  const cross=svg.append("line").attr("stroke","#8a8983").attr("stroke-dasharray","2 2").attr("y1",m.t).attr("y2",H-m.b).style("opacity",0);
+  chartLegend(svg,W,H,rows);
+  const cross=svg.append("line").attr("stroke",THEME.muted).attr("stroke-dasharray","2 2").attr("y1",m.t).attr("y2",H-m.b).style("opacity",0);
   svg.append("rect").attr("x",m.l).attr("y",m.t).attr("width",W-m.l-m.r).attr("height",H-m.t-m.b).attr("fill","transparent")
     .on("mousemove",ev=>{ const [mx]=d3.pointer(ev); const w=Math.round(x.invert(mx)); const r=rows.find(q=>q.winter===w)||rows.reduce((a,b)=>Math.abs(b.winter-w)<Math.abs(a.winter-w)?b:a);
       cross.attr("x1",x(r.winter)).attr("x2",x(r.winter)).style("opacity",1);
       const ep=winters.get(r.winter).event_peak;
-      showTip(ev,`<b>${r.label}</b> · ${GL[r.group]}<br>${f2(r.y)} ${metricUnit()}<br>DJF ONI ${f2(r.oni)}${ep!=null?` · ${t("eventPeak")} ${f2(ep)}`:""}`); })
+      showTip(ev,`<b>${r.label}</b> · ${GL[r.group]}<br>${f2(r.y)} ${metricUnit()}<br>${t("oniShort")} ${f2(r.oni)}${ep!=null?` · ${t("eventPeak")} ${f2(ep)}`:""}`); })
     .on("mouseleave",()=>{cross.style("opacity",0); hideTip();});
 }
 
 // ---------- scatter ----------
 function renderScatter(){
-  const rows=currentRows().filter(r=>r.oni!=null); const W=560,H=340, m={t:14,r:16,b:44,l:56};
+  const rows=currentRows().filter(r=>r.oni!=null); const W=560,H=360, m={t:14,r:16,b:66,l:56};
   const svg=svgSetup("scat",W,H);
   const rho=spearman(rows.map(r=>r.oni), rows.map(r=>r.y));
   const pre=(!S.dayMode&&PRESET_SEASON[S.preset]) ? oniCorr.find(c=>c.level===S.level&&c.unit===S.unit&&c.season===PRESET_SEASON[S.preset]&&c.metric===S.metric&&c.variant===VARIANT_KEY[S.variant]) : null;
   document.getElementById("scatSub").textContent=t("scatSub")(unitLabel(), f2(rho), rows.length, pre?fp(pre.p):null);
-  if(!rows.length){ svg.append("text").attr("x",W/2).attr("y",H/2).attr("text-anchor","middle").attr("fill","#8a8983").text(t("nodata")); return; }
+  if(!rows.length){ noData(svg,W,H,t("nodata")); return; }
   const x=d3.scaleLinear().domain(d3.extent(rows,r=>r.oni)).nice().range([m.l,W-m.r]);
   const ys=rows.map(r=>r.y); const pad=(d3.max(ys)-d3.min(ys))*0.08||1;
   const y=d3.scaleLinear().domain([d3.min(ys)-pad,d3.max(ys)+pad]).nice().range([H-m.b,m.t]);
-  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(6).tickSize(-(W-m.l-m.r))).call(g=>g.selectAll(".tick line").attr("class","gridline")).call(g=>g.select(".domain").remove());
-  svg.append("g").attr("class","axis").attr("transform",`translate(0,${H-m.b})`).call(d3.axisBottom(x).ticks(8));
-  svg.append("text").attr("x",(W+m.l-m.r)/2).attr("y",H-8).attr("text-anchor","middle").attr("fill","#52514e").attr("font-size",11).text(t("oniAxis"));
-  svg.append("text").attr("transform","rotate(-90)").attr("x",-(H-m.b+m.t)/2).attr("y",14).attr("text-anchor","middle").attr("fill","#52514e").attr("font-size",11).text(yLabel());
+  panel(svg,W,H,m);
+  axisLeft(svg,y,m);
+  axisBottom(svg,d3.axisBottom(x).ticks(8),m,H);
+  axisTitleX(svg,m,W,H-m.b+34,t("oniAxis"));
+  axisTitleY(svg,m,H,yLabel());
   [0.5,-0.5].forEach(v=>svg.append("line").attr("class","zero").attr("x1",x(v)).attr("x2",x(v)).attr("y1",m.t).attr("y2",H-m.b));
-  if(y.domain()[0]<0&&y.domain()[1]>0) svg.append("line").attr("class","zero").attr("x1",m.l).attr("x2",W-m.r).attr("y1",y(0)).attr("y2",y(0));
+  zeroLine(svg,y,m,W);
   svg.append("g").selectAll("circle").data(rows).join("circle").attr("cx",r=>x(r.oni)).attr("cy",r=>y(r.y)).attr("r",r=>r.group==="super"?6:4.5)
-    .attr("fill",r=>COL[r.group]).attr("fill-opacity",0.8).attr("stroke","#fff").attr("stroke-width",1)
+    .attr("fill",r=>COL[r.group]).attr("fill-opacity",0.85).attr("stroke",THEME.panel).attr("stroke-width",1)
     .on("mousemove",(ev,d)=>showTip(ev,`<b>${d.label}</b> · ${GL[d.group]}<br>${f2(d.y)} ${metricUnit()} · ONI ${f2(d.oni)}`)).on("mouseleave",hideTip);
   let prev=-Infinity;
   rows.filter(r=>r.group==="super").sort((a,b)=>y(a.y)-y(b.y)).forEach(r=>{ let ly=y(r.y)+4; if(ly-prev<13) ly=prev+13; prev=ly;
     const flip = x(r.oni) > W - m.r - 60;
-    svg.append("text").attr("x",x(r.oni)+(flip?-8:8)).attr("y",ly).attr("text-anchor",flip?"end":"start").attr("font-size",11).attr("fill","#161616").text(r.label); });
+    svg.append("text").attr("x",x(r.oni)+(flip?-8:8)).attr("y",ly).attr("text-anchor",flip?"end":"start").attr("font-size",11).attr("fill",THEME.ink).text(r.label); });
+  chartLegend(svg,W,H,rows);
 }
 
 // ---------- map ----------
@@ -688,38 +816,40 @@ function siteContrast(site){
   return {diff:mean(a)-mean(b), p:permP(a,b,PRESET_SEASON[S.preset]?600:1000,11), n1:a.length, n2:b.length};
 }
 function renderMap(){
-  const W=560,H=520; const svg=svgSetup("map",W,H);
+  const W=560,H=520; const svg=svgSetup("map",W,H); const pad=8;
   const [g1,g2]=S.contrast;
   if(S.dayMode){ document.getElementById("mapSub").textContent=t("mapDay"); return; }
   document.getElementById("mapSub").textContent=t("mapSub")(GL[g1],GL[g2],variantLabel(S.variant),windowLabel());
   const ring=[]; for(let lon=-25;lon<32;lon+=1) ring.push([lon,71.5]); for(let lat=71.5;lat>54;lat-=0.5) ring.push([32,lat]);
   for(let lon=32;lon>-25;lon-=1) ring.push([lon,54]); for(let lat=54;lat<71.5;lat+=0.5) ring.push([-25,lat]); ring.push([-25,71.5]);
   const bbox={type:"Polygon",coordinates:[ring]};
-  const proj=d3.geoConicConformal().parallels([58,68]).rotate([-15,0]).fitExtent([[8,8],[W-8,H-8]],bbox);
+  const proj=d3.geoConicConformal().parallels([58,68]).rotate([-15,0]).fitExtent([[pad,pad],[W-pad,H-pad]],bbox);
   const path=d3.geoPath(proj);
   svg.append("clipPath").attr("id","mapclip").append("path").attr("d",path(bbox));
   const g=svg.append("g").attr("clip-path","url(#mapclip)");
-  g.append("path").attr("d",path(bbox)).attr("fill","#f3f6fa");
-  g.append("g").selectAll("path").data(otherFeats).join("path").attr("d",path).attr("fill","#ececea").attr("stroke","#fff").attr("stroke-width",0.6);
-  g.append("g").selectAll("path").data(nordicFeats).join("path").attr("d",path).attr("fill","#dcdcd8").attr("stroke","#fff").attr("stroke-width",0.8);
+  g.append("path").attr("d",path(bbox)).attr("fill",THEME.sea);
+  g.append("g").selectAll("path").data(otherFeats).join("path").attr("d",path).attr("fill",THEME.land).attr("stroke",THEME.shore).attr("stroke-width",0.6);
+  g.append("g").selectAll("path").data(nordicFeats).join("path").attr("d",path).attr("fill",THEME.nordic).attr("stroke",THEME.shore).attr("stroke-width",0.8);
   const vals=sites.map(s=>({s,c:siteContrast(s)})).filter(d=>d.c);
   const maxAbs=d3.max(vals,d=>Math.abs(d.c.diff))||1;
-  const color=d3.scaleDiverging([ -maxAbs, 0, maxAbs ], tt=>d3.interpolateRgbBasis(["#2a78d6","#f0efec","#b3262c"])(tt));
+  const color=d3.scaleDiverging([ -maxAbs, 0, maxAbs ], tt=>d3.interpolateRgbBasis([THEME.lanina,THEME.divmid,THEME.super])(tt));
   g.append("g").selectAll("circle").data(vals).join("circle")
     .attr("cx",d=>proj([d.s.lon,d.s.lat])[0]).attr("cy",d=>proj([d.s.lon,d.s.lat])[1]).attr("r",d=>d.s.source==="ERA5"?5:7)
-    .attr("fill",d=>color(d.c.diff)).attr("stroke",d=>d.c.p<0.05?"#161616":"#fff").attr("stroke-width",d=>d.c.p<0.05?2.2:1)
+    .attr("fill",d=>color(d.c.diff)).attr("stroke",d=>d.c.p<0.05?THEME.ink:THEME.shore).attr("stroke-width",d=>d.c.p<0.05?2.2:1)
     .style("cursor","pointer")
     .on("mousemove",(ev,d)=>showTip(ev,`<b>${d.s.name}</b> (${countryName(d.s.country)}, ${d.s.source})<br>${GL[g1]} − ${GL[g2]}: ${f2(d.c.diff)} ${metricUnit()}<br>n = ${d.c.n1} ${t("vs")} ${d.c.n2}, p = ${fp(d.c.p)}`))
     .on("mouseleave",hideTip)
     .on("click",(ev,d)=>{ S.level="site"; S.unit=d.s.site_id; setLevelButtons(); fillUnits(); render(); });
+  // Panel border in the publication style, drawn on top of the clipped map.
+  svg.append("path").attr("class","mapframe").attr("d",path(bbox)).attr("fill","none").attr("stroke",THEME.ink).attr("stroke-width",1.2);
   const lg=svg.append("g").attr("class","maplegend").attr("transform",`translate(${W-190},${H-46})`);
   const grad=svg.append("defs").append("linearGradient").attr("id","divgrad");
   d3.range(0,1.01,0.1).forEach(tt=>grad.append("stop").attr("offset",`${tt*100}%`).attr("stop-color",color(-maxAbs+2*maxAbs*tt)));
-  lg.append("rect").attr("width",170).attr("height",10).attr("fill","url(#divgrad)").attr("stroke","#e3e2de");
+  lg.append("rect").attr("width",170).attr("height",10).attr("fill","url(#divgrad)").attr("stroke",THEME.ink).attr("stroke-width",0.6);
   lg.append("text").attr("y",24).text(`−${f2(maxAbs)}`); lg.append("text").attr("x",85).attr("y",24).attr("text-anchor","middle").text("0");
   lg.append("text").attr("x",170).attr("y",24).attr("text-anchor","end").text(`+${f2(maxAbs)}`);
-  lg.append("text").attr("y",-6).text(t("diffLegend")(metricUnit()));
-  if(!vals.length) svg.append("text").attr("x",W/2).attr("y",30).attr("text-anchor","middle").attr("fill","#8a8983").text(t("noDataGroups"));
+  lg.append("text").attr("y",-6).attr("font-weight",700).attr("fill",THEME.ink).text(t("diffLegend")(metricUnit()));
+  if(!vals.length) svg.append("text").attr("x",W/2).attr("y",30).attr("text-anchor","middle").attr("fill",THEME.muted).text(t("noDataGroups"));
 }
 
 // ---------- tables ----------
@@ -729,7 +859,7 @@ function renderTables(){
   document.getElementById("tabSub").textContent=t("tabSub")(unitLabel(), windowLabel(), metricLabel(S.metric), variantLabel(S.variant), S.thr.toFixed(1));
   const by=GROUPS.map(g=>{ const v=rows.filter(r=>r.group===g).map(r=>r.y); const [lo,hi]=bootCI(v); return {g,n:v.length,mean:mean(v),median:v.length?d3.median(v):NaN,sd:sd(v),lo,hi,winters:rows.filter(r=>r.group===g).map(r=>r.label).join(" ")}; });
   document.getElementById("tab1").innerHTML=`<tr><th>${t("thGroup")}</th><th>${t("thN")}</th><th>${t("thMean")}</th><th>${t("thCI")}</th><th>${t("thMedian")}</th><th>${t("thSD")}</th><th style="text-align:left">${t("thWinters")}</th></tr>`+
-    by.map(r=>`<tr><td>${GL[r.g]}</td><td>${r.n}</td><td>${f2(r.mean)}</td><td>${f2(r.lo)} – ${f2(r.hi)}</td><td>${f2(r.median)}</td><td>${f2(r.sd)}</td><td style="text-align:left;white-space:normal;font-size:11px;color:#52514e">${r.winters}</td></tr>`).join("");
+    by.map(r=>`<tr><td>${GL[r.g]}</td><td>${r.n}</td><td>${f2(r.mean)}</td><td>${f2(r.lo)} – ${f2(r.hi)}</td><td>${f2(r.median)}</td><td>${f2(r.sd)}</td><td style="text-align:left;white-space:normal;font-size:11px;color:var(--text2)">${r.winters}</td></tr>`).join("");
   const pairs=[["super","elnino"],["super","neutral"],["elnino","neutral"],["super","lanina"],["lanina","neutral"]];
   lastStats=pairs.map(([a,b])=>{ const va=rows.filter(r=>r.group===a).map(r=>r.y), vb=rows.filter(r=>r.group===b).map(r=>r.y); const [lo,hi]=bootDiffCI(va,vb); return {a,b,n1:va.length,n2:vb.length,diff:mean(va)-mean(vb),lo,hi,p:permP(va,vb),d:cohenD(va,vb)}; });
   document.getElementById("tab2").innerHTML=`<tr><th>${t("thContrast")}</th><th>${t("thN")}</th><th>${t("thDiff")}</th><th>${t("thCI")}</th><th>${t("thP")}</th><th>${t("thD")}</th></tr>`+
@@ -780,10 +910,15 @@ function fileStem(){ return `${S.level}_${S.unit}_${S.dayMode?"days":windowLabel
 document.getElementById("dl").onclick=()=>{ const rows=currentRows(); const csv=["winter,label,group,oni_djf,"+VARIANT_KEY[S.variant]].concat(rows.map(r=>`${r.winter},${r.label},${r.group},${r.oni},${r.y}`)).join("\n"); download(`enso_${fileStem()}.csv`, new Blob([csv],{type:"text/csv"})); };
 document.getElementById("dl2").onclick=()=>{ const csv=["contrast,n1,n2,diff,ci_lo,ci_hi,p_perm,cohen_d"].concat(lastStats.map(r=>`${r.a} vs ${r.b},${r.n1},${r.n2},${r.diff},${r.lo},${r.hi},${r.p},${r.d}`)).join("\n"); download(`enso_stats_${fileStem()}.csv`, new Blob([csv],{type:"text/csv"})); };
 const STYLE_PROPS=["fill","fill-opacity","stroke","stroke-width","stroke-dasharray","opacity","font-size","font-family","font-weight","text-anchor"];
+const RENDERERS={comp:()=>renderComposite(), scat:()=>renderScatter(), ts:()=>renderTS(), map:()=>renderMap()};
 function exportPNG(svgId){
+  // Export always in the light (print) palette, whatever the screen theme: switch, re-render, snapshot, switch back.
+  const root=document.documentElement, prevTheme=root.dataset.theme;
+  root.dataset.theme="light"; refreshTheme(); RENDERERS[svgId]();
   const src=document.getElementById(svgId); const clone=src.cloneNode(true);
   const so=src.querySelectorAll("*"), co=clone.querySelectorAll("*");
   so.forEach((el,i)=>{ const cs=getComputedStyle(el); STYLE_PROPS.forEach(p=>{ const v=cs.getPropertyValue(p); if(v) co[i].style.setProperty(p,v); }); });
+  root.dataset.theme=prevTheme; refreshTheme(); RENDERERS[svgId]();
   const vb=src.viewBox.baseVal, W=vb.width, H=vb.height, scale=2;
   clone.setAttribute("xmlns","http://www.w3.org/2000/svg"); clone.setAttribute("width",W); clone.setAttribute("height",H);
   clone.style.fontFamily=getComputedStyle(document.body).fontFamily;
@@ -805,7 +940,14 @@ function render(){
   else if(document.getElementById("modeNote").textContent.startsWith(t("customNote")("").slice(0,6))) note("");
   renderLegend(); renderComposite(); renderScatter(); renderTS(); renderMap(); renderTables(); renderTracker(); renderOlos();
 }
+applyTheme();
 applyLang();
+// Deep links for the blog: ?preset=olos opens the Muonio (Olos) November view, ?lang=fi|en sets the language.
+try {
+  const q=new URLSearchParams(location.search);
+  if(q.get("lang")==="fi"||q.get("lang")==="en"){ LANG=q.get("lang"); applyLang(); }
+  if(q.get("preset")==="olos") document.getElementById("olosBtn").click();
+} catch(e) {}
 })();
 </script>
 </body>
