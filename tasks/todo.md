@@ -46,3 +46,9 @@ normal El Niño, neutral and La Niña winters. ENSO groups from NOAA ONI (1950+)
 - blog/olos_intro.md (EN, ~200 words + sources). GitHub Pages workflow + README publishing steps. Git repo
   initialised and staged, not committed or pushed (user decision).
 - Not verified: PNG download itself (browser sandbox); file:// launch (no fetch used, should work).
+
+## Done 2026-09-09
+- App: dark theme default + light toggle, publication-style chart scaffolding, PNG export in light palette.
+- Deep links `?preset=olos`, `?lang=fi|en`. Verified headless (no console errors).
+- Repo public, Pages via Actions on push, release v1.0.0. Live: https://rikhardfi.github.io/el-nino-years/
+- Blog numbers for Muonio Nov 1997 / Nov 2015 verified against monthly_metrics.csv.
